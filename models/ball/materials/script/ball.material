@@ -1,0 +1,14 @@
+material Ball/Normal
+{
+  receive_shadows off
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture Green.png
+      }
+    }
+  }
+}

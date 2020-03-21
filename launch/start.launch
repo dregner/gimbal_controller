@@ -1,0 +1,33 @@
+<launch>
+    <arg name="world_name" default="basic"/>
+    <arg name="verbose" default="true"/>
+    <arg name="paused" default="false"/>
+    <arg name="use_sim_time" default="true"/>
+    <arg name="gui" default="false"/>
+    <arg name="camera" default="true"/>
+
+
+    <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
+    <!-- <env name="GAZEBO_MODEL_PATH" value="${GAZEBO_MODEL_PATH}:$(find vant3d_gazebo)/models"/>
+    <env name="GAZEBO_RESOURCE_PATH" value="${GAZEBO_RESOURCE_PATH}:$(find vant3d_gazebo)/models"/> -->
+    
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(find gimbal_controller)/worlds/$(arg world_name).world"/>
+        <!-- more default parameters can be changed here -->
+        <arg name="verbose" value="$(arg verbose)"/>   
+        <arg name="gui" value="$(arg gui)" />
+        <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+        <arg name="paused" value="$(arg paused)" />
+    </include>
+
+
+    <group if="$(arg camera)">
+    <param name="camera_description"
+           command="$(find xacro)/xacro --inorder '$(find gimbal_controller)/urdf/camera.xacro'" />
+
+    <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
+    <node name="camera_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+          args="-urdf -x -0 -y -6 -z 3 -model camera -param camera_description"/>
+    </group>
+
+</launch>
