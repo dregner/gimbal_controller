@@ -35,7 +35,7 @@
                 <visualize>true</visualize>
 
                 <camera name="viewer">
-                    <horizontal_fov>1.0</horizontal_fov>
+                    <horizontal_fov>${pi/180*18.92}</horizontal_fov>
 
                     <image>
                         <width>800</width>

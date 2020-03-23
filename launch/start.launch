@@ -5,6 +5,8 @@
     <arg name="use_sim_time" default="true"/>
     <arg name="gui" default="false"/>
     <arg name="camera" default="true"/>
+    <arg name="gimbal" default="true"/>
+
 
 
     <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
@@ -27,7 +29,17 @@
 
     <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
     <node name="camera_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-          args="-urdf -x -0 -y -6 -z 3 -model camera -param camera_description"/>
+          args="-urdf -x -0 -y -10 -z 1 -model camera -param camera_description"/>
+    </group>
+    
+
+    <group if="$(arg gimbal)">
+    <param name="gimbal_description"
+           command="$(find xacro)/xacro --inorder '$(find gimbal_controller)/urdf/simple_gimbal.xacro'" />
+
+    <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
+    <node name="gimbal_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+          args="-urdf -x -0 -y -0 -z 0.5 -model gimbal -param gimbal_description"/>
     </group>
 
 </launch>
