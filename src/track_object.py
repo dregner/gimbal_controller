@@ -29,7 +29,7 @@ class image_converter:
 
     self.image_pub = rospy.Publisher("opencv_camera",Image)
     self.bridge = CvBridge()
-    self.image_sub = rospy.Subscriber("/camera/camera_viewer/image_raw",Image,self.callback)
+    self.image_sub = rospy.Subscriber("/gimbal/camera/image_raw",Image,self.callback)
     counter = 0
     (dX, dY) = (0, 0)
     direction = ""

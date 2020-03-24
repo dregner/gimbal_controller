@@ -3,6 +3,7 @@ project(gimbal_controller)
 
 #Adicionando os plugins ROS
 find_package(roscpp REQUIRED)
+find_package(rospy REQUIRED)
 find_package(std_msgs REQUIRED)
 include_directories(${roscpp_INCLUDE_DIRS})
 include_directories(${std_msgs_INCLUDE_DIRS})
@@ -12,7 +13,21 @@ find_package(gazebo REQUIRED)
 include_directories(${GAZEBO_INCLUDE_DIRS})
 link_directories(${GAZEBO_LIBRARY_DIRS})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
-
+#
+#install(DIRECTORY config
+#        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+#
+#install(DIRECTORY launch
+#        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+#
+#install(DIRECTORY urdf
+#        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+#
+#install(DIRECTORY launch
+#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+#
+#install(DIRECTORY worlds
+#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 
 

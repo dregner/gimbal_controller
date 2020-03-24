@@ -34,21 +34,21 @@
         </light>
 
 
-        <model name="Ball">
+        <model name="Ball Green">
             <static>true</static>
             <link name="link">
-                <pose>10 0 5 0 0 0</pose>
+                <pose>0 0 1 0 0 0</pose>
                 <collision name="collision">
                     <geometry>
                         <sphere>
-                            <radius>1.0</radius>
+                            <radius>0.5</radius>
                         </sphere>
                     </geometry>
                 </collision>
                 <visual name="visual">
                     <geometry>
                         <sphere>
-                            <radius>1.0</radius>
+                            <radius>0.5</radius>
                         </sphere>
                     </geometry>
                     <material>
@@ -59,8 +59,38 @@
                     </material>
                 </visual>
             </link>
-            <!-- <plugin name="push_animate" filename="libanimated_ball.so"/> -->
+             <plugin name="push_animate" filename="libanimated_ball.so"/>
         </model>
+
+        <model name="Ball Red">
+            <static>true</static>
+            <link name="link">
+                <pose>0 3 0.5 0 0 0</pose>
+                <collision name="collision">
+                    <geometry>
+                        <sphere>
+                            <radius>0.25</radius>
+                        </sphere>
+                    </geometry>
+                </collision>
+                <visual name="visual">
+                    <geometry>
+                        <sphere>
+                            <radius>0.25</radius>
+                        </sphere>
+                    </geometry>
+                    <material>
+                        <ambient>1 0 0 1</ambient>
+                        <diffuse>1 0 0 1</diffuse>
+                        <specular>0.1 0.1 0.1 1</specular>
+                        <emissive>0 0 0 0</emissive>
+                    </material>
+                </visual>
+            </link>
+<!--            <plugin name="push_animate" filename="libanimated_ball.so"/>-->
+        </model>
+
+
         <!-- A ground plane -->
         <include>
             <uri>model://ground_plane</uri>
@@ -99,7 +129,7 @@
         <!-- Unser Interface -->
         <gui fullscreen='0'>
             <camera name='user_camera'>
-                <pose frame=''>-35.5 -9.15 5.5 0 0.124 0.346</pose>
+                <pose frame=''>-7.87 -0.4077 0.91 0 0.128 0.434</pose>
                 <view_controller>orbit</view_controller>
                 <projection_type>perspective</projection_type>
             </camera>

@@ -56,27 +56,27 @@ namespace gazebo {
             </include>*/
             // set starting location of the box
             key = anim->CreateKeyFrame(0);
-            key->Translation(ignition::math::Vector3d(0, 0, 2));
+            key->Translation(ignition::math::Vector3d(0, 0, 1));
             key->Rotation(ignition::math::Quaterniond(0, 0, 0));
 
             key = anim->CreateKeyFrame(1 * time_coef);
-            key->Translation(ignition::math::Vector3d(1, 0, 2));
+            key->Translation(ignition::math::Vector3d(0, -1, 0.5));
             key->Rotation(ignition::math::Quaterniond(0, 0, 0));
 
             key = anim->CreateKeyFrame(2 * time_coef);
-            key->Translation(ignition::math::Vector3d(-1, 0, 2));
+            key->Translation(ignition::math::Vector3d(0, 1, 1));
             key->Rotation(ignition::math::Quaterniond(0, 0, 0));
 
             key = anim->CreateKeyFrame(3 * time_coef);
-            key->Translation(ignition::math::Vector3d(1, 0, 2));
+            key->Translation(ignition::math::Vector3d(0, -1, 0.5));
             key->Rotation(ignition::math::Quaterniond(0, 0, 0));
 
             key = anim->CreateKeyFrame(4 * time_coef);
-            key->Translation(ignition::math::Vector3d(-1, 0, 2));
+            key->Translation(ignition::math::Vector3d(0, 1, 1));
             key->Rotation(ignition::math::Quaterniond(0, 0, 0));
 
             key = anim->CreateKeyFrame(5 * time_coef);
-            key->Translation(ignition::math::Vector3d(1, 0, 2));
+            key->Translation(ignition::math::Vector3d(0, 0, 1));
             key->Rotation(ignition::math::Quaterniond(0, 0, 0));
 
 

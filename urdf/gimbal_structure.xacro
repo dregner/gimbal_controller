@@ -1,0 +1,88 @@
+<?xml version="1.5"?>
+<robot name="gimbal" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:include filename="$(find gimbal_controller)/urdf/generic_gimbal_base.xacro"/>
+
+    <xacro:property name="pi" value="3.1415926535897931"/>
+
+    <link name="world">
+    </link>
+
+    <joint name="joint_base" type="fixed">
+        <axis xyz="0 0 1"/>
+        <!--<limit eff
+        ort="10" velocity="<1.0" lower="-1.57" upper="1.57"/>-->
+        <origin xyz="0 0 0.5" rpy="0 0 0"/>
+        <parent link="world"/>
+        <child link="base_link"/>
+    </joint>
+
+    <link name="base_link">
+        <colision>
+            <geometry>
+                <box size="0.1 0.1 1"/>
+            </geometry>
+        </colision>
+        <visual>
+            <geometry>
+                <box size="0.1 0.1 1"/>
+            </geometry>
+        </visual>
+        <inertial>
+            <mass value="10"/>
+            <xacro:box_inertia x="0.1" y="0.1" z="1" mass="10"/>
+        </inertial>
+    </link>
+
+    <joint name="joint_base_1" type="fixed">
+        <axis xyz="0 0 1"/>
+        <!--<limit eff
+        ort="10" velocity="<1.0" lower="-1.57" upper="1.57"/>-->
+        <origin xyz="0.25 0 0.5" rpy="0 0 0"/>
+        <parent link="base_link"/>
+        <child link="base_link_1"/>
+    </joint>
+
+    <link name="base_link_1">
+        <colision>
+            <geometry>
+                <box size="0.6 0.1 0.1"/>
+            </geometry>
+        </colision>
+        <visual>
+            <geometry>
+                <box size="0.6 0.1 0.1"/>
+            </geometry>
+        </visual>
+        <inertial>
+            <mass value="5"/>
+            <xacro:box_inertia x="0.5" y="0.1" z="0.1" mass="5"/>
+        </inertial>
+    </link>
+
+    <gazebo reference="base_link">
+        <material>Gazebo/Orange</material>
+    </gazebo>
+    <gazebo reference="base_link_1">
+        <material>Gazebo/Orange</material>
+    </gazebo>
+
+
+    <xacro:generic_gimbal
+            robot_namespace="gimbal"
+            camera_suffix=""
+            parent_link="base_link_1"
+            horizontal_fov="${pi/180*20}"
+            image_width="800"
+            image_height="600"
+            image_format="R8G8B8"
+            max_range="100"
+            visualize="true"
+            type="fixed"
+            mass="1"
+            z="-0.05"
+            x="0.25">
+    </xacro:generic_gimbal>
+
+
+</robot>
