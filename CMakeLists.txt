@@ -8,6 +8,9 @@ find_package(std_msgs REQUIRED)
 include_directories(${roscpp_INCLUDE_DIRS})
 include_directories(${std_msgs_INCLUDE_DIRS})
 
+## Adicionado a biblioteca do OpenCV
+find_package(OpenCV REQUIRED)
+
 # Find Gazebo
 find_package(gazebo REQUIRED)
 include_directories(${GAZEBO_INCLUDE_DIRS})
@@ -45,11 +48,15 @@ catkin_package(
         roscpp
         sensor_msgs
 )
+include_directories(include ${catkin_INCLUDE_DIRS})
+
 
 # Librery de mover a parede
 add_library(animated_ball SHARED src/animated_ball.cc)
 target_link_libraries(animated_ball ${GAZEBO_LIBRARIES})
 
+add_library(g_control src/gimbal_control.cpp)
+target_link_libraries(g_control ${catkin_LIBRARIES})
 
 foreach(dir launch models meshes urdf worlds config)
     install(DIRECTORY ${dir}/
