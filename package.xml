@@ -17,7 +17,6 @@
 
     <build_depend>sensor_msgs</build_depend>
     <build_depend>std_msgs</build_depend>
-    <build_depend>arma</build_depend>
     <build_depend>gazebo_msgs</build_depend>
     <build_depend>gazebo_plugins</build_depend>
     <build_depend>roscpp</build_depend>
@@ -32,6 +31,7 @@
     <run_depend>xacro</run_depend>
     <run_depend>sensor_msgs</run_depend>
     <run_depend>roscpp</run_depend>
+    <run_depend>rospy</run_depend>
     <run_depend>controller_manager</run_depend>
     <run_depend>joint_state_controller</run_depend>
     <run_depend>robot_state_publisher</run_depend>
