@@ -31,37 +31,35 @@ int pixel_x, pixel_y;
 int central_pixel_x = 400;
 int central_pixel_y = 300;
 
-/// Leitura Joint States
-float roll, pitch, yaw;
 
 /* Parametros de Controle */
 int frequence = 60;
 /// Parametros de controle para POS Y Pixel
 // TODO: Ajustar parâmetros Kc e z0
-float error_px_y = 0;
-float error_px_x = 0;
-float u_px_y = 0;
-float u_px_x = 0;
-float u_px_y_k = u_px_y;
-float u_px_x_k = u_px_x;
-
-float u_k_x = 0;
-float u_k_y = 0;
-float er_k_x = 0;
-float er_k_y = 0;
-
+float error_px_y = 0, error_px_x = 0;
+float u_px_y = 0, u_px_x = 0;
+float u_px_y_k = u_px_y, u_px_x_k = u_px_x;
+float u_k_x = 0, u_k_y = 0;
+float er_k_x = 0, er_k_y = 0;
 
 /// Tempo de amostragem para malha de controle
 int Ts = 10;
-int countt = 0;
+int countt = 0, tout = 0;
 int histerese_error_x = 5;
 int histerese_error_y = 5;
+float GDS = 0.002695;
+bool first_time = true;
+
+/// Leitura Joint States
+float roll, pitch, yaw;
 
 
 using namespace std;
+static std::ofstream states;
 
 class Gimbal_Control {
 private:
+
 
     int frequence = 10;
 
@@ -92,6 +90,8 @@ public:
         pub_pitch = nh_.advertise<std_msgs::Float64>("/gimbal/pitch_position_controller/command", 100);
         pub_yaw = nh_.advertise<std_msgs::Float64>("/gimbal/yaw_position_controller/command", 1);
 
+
+        states.open("states.txt");
     }
 
     ~Gimbal_Control() {
@@ -113,9 +113,14 @@ public:
         pitch = msg->position[0];
         roll = msg->position[1];
         yaw = msg->position[2];
-
-//        ROS_INFO("rpy: %f\t%f\t%f", roll, pitch, yaw);
+        //ROS_INFO("rpy: %f\t%f\t%f", roll, pitch, yaw);
+        if(first_time == true){
+            u_k_x = yaw;
+            u_k_y = pitch;
+            first_time = false;
+        }
         control();
+
 
     }
 
@@ -125,8 +130,8 @@ public:
         float er_y = central_pixel_y - pixel_y;
         ROS_INFO("er_x: %f", er_x);
         ROS_INFO("er_y: %f", er_y);
-        er_x = er_x * 0.002695;
-        er_y = er_y * 0.002695;
+        er_x = er_x * GDS;
+        er_y = er_y * GDS;
         if (countt > Ts) {
             control_x_position(er_x);
             control_y_position(er_y);
@@ -136,16 +141,22 @@ public:
         er_k_y = er_y;
         er_k_x = er_x;
         countt++;
+        tout++;
+
+        if (states.is_open() && tout < 2000) {
+            states << tout << "\t" << yaw << "\t" << u_k_x << "\t" << er_x / GDS
+                   << "\t" << pitch << "\t" << u_k_x << "\t" << er_y / GDS << "\n";
+        }
     }
 
     void control_x_position(float er_x) {
 
         float u;
 
-        if (abs(er_x) > central_pixel_x*0.002695) {
+        if (abs(er_x) > central_pixel_x * GDS) {
             u = u_k_x;
         } else {
-            u = (0.8* (er_k_x - 0.95 * er_x) + u_k_x);
+            u = (0.10 * (er_k_x - 0.75 * er_x) + u_k_x);
         }
         msg_yaw.data = u;
         pub_yaw.publish(msg_yaw);
@@ -155,10 +166,10 @@ public:
 
     void control_y_position(float er_y) {
         float u;
-        if (abs(er_y) > central_pixel_y*0.002695) {
+        if (abs(er_y) > central_pixel_y * GDS) {
             u = u_k_y;
         } else {
-            u = (-0.1 * (er_k_y - 0.95 * er_y) + u_k_y);
+            u = (-0.15 * (er_k_y - 0.75 * er_y) + u_k_y);
         }
         msg_pitch.data = u;
         pub_pitch.publish(msg_pitch);
