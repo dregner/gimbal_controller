@@ -6,7 +6,7 @@ project(gimbal_controller)
 find_package(roscpp REQUIRED)
 find_package(rospy REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(Python COMPONENTS Interpreter Development)
+#find_package(Python COMPONENTS Interpreter Development)
 include_directories(${roscpp_INCLUDE_DIRS})
 include_directories(${std_msgs_INCLUDE_DIRS})
 
@@ -29,7 +29,6 @@ find_package(catkin REQUIRED COMPONENTS gazebo_msgs roscpp rospy sensor_msgs cv_
         std_msgs)
 
 catkin_package(
-        INCLUDE_DIRS include
         CATKIN_DEPENDS
         gazebo_msgs
         roscpp
@@ -54,9 +53,9 @@ add_library(animated_ball SHARED src/animated_ball.cc)
 target_link_libraries(animated_ball ${GAZEBO_LIBRARIES})
 
 
-            ###########
-    ## EXECUTABLES
-###########
+            ##########
+    # EXECUTABLES
+##########
 
 add_executable(g_control src/control_joint.cpp)
 target_link_libraries(g_control ${catkin_LIBRARIES})
