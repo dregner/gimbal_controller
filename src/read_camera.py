@@ -15,7 +15,7 @@ class image_converter:
     # self.image_pub = rospy.Publisher("image_topic_2",Image)
 
     self.bridge = CvBridge()
-    self.image_sub = rospy.Subscriber("/gimbal/camera/image_raw",Image,self.callback)
+    self.image_sub = rospy.Subscriber("/camera/image_raw",Image,self.callback)
 
   def callback(self,data):
     try:

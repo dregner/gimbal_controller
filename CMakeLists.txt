@@ -61,4 +61,8 @@ add_executable(g_control src/control_joint.cpp)
 target_link_libraries(g_control ${catkin_LIBRARIES})
 
 
+add_executable(pub_camera src/pub_camera.cpp)
+target_link_libraries(pub_camera ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
+
 
