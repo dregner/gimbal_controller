@@ -39,7 +39,7 @@
 
     <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
     <node name="gimbal_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-          args="-urdf -x -8 -y -0 -z 0 -model gimbal -param robot_description"/>
+          args="-urdf -x -5.5 -y -0 -z 0 -model gimbal -param robot_description"/>
 
         <rosparam file="$(find gimbal_controller)/config/gimbal_controller.yaml" command="load"/>
 

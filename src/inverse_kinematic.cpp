@@ -9,6 +9,7 @@
 #include <std_msgs/Float64.h>
 #include <sensor_msgs/Imu.h>
 #include <std_msgs/Int16.h>
+#include <gimbal_controller/BoundingBox.h>
 #include <sensor_msgs/JointState.h>
 #include <ignition/math/Pose3.hh>
 #include <image_transport/image_transport.h>
@@ -37,7 +38,7 @@ int central_pixel_y = resolution_y/2;
 /// X5S specs
 float pixel_dimenson = 3.4; //Pixel dimension of X5S
 int focal_length = 30; //Focal length of camera len
-int dx = 7.5; //Distence to object
+int dx = 5; //Distence to object
 float GSD = dx*pixel_dimenson/focal_length;
 
 
@@ -77,8 +78,7 @@ private:
     ros::NodeHandle nh_;
 
     ros::Subscriber sub_joint_states;
-    ros::Subscriber sub_pixel_x;
-    ros::Subscriber sub_pixel_y;
+    ros::Subscriber sub_pixel;
 
     std_msgs::Float64 msg_roll;
     std_msgs::Float64 msg_pitch;
@@ -93,8 +93,7 @@ private:
 public:
     Inverse_Kinematic() {
 
-        sub_pixel_x = nh_.subscribe("/pixel_x", 10, &Inverse_Kinematic::read_px_x, this);
-        sub_pixel_y = nh_.subscribe("/pixel_y", 10, &Inverse_Kinematic::read_px_y, this);
+        sub_pixel = nh_.subscribe("/boundingbox", 10, &Inverse_Kinematic::read_px, this);
         sub_joint_states = nh_.subscribe("/gimbal/joint_states", 100, &Inverse_Kinematic::read_JS, this);
 
         pub_roll = nh_.advertise<std_msgs::Float64>("/gimbal/roll_position_controller/command", 100);
@@ -109,12 +108,17 @@ public:
 
     }
 
-    void read_px_x(const std_msgs::Int16Ptr &msg) {
-        pixel_x = msg->data;
+    void read_px(const gimbal_controller::BoundingBox::ConstrPtr &msg) {
+        int xmin = msg.xmin;
+        int xmax = msg.xmax;
+        int ymin = msg.ymin;
+        int ymax = msg.ymax;
+
     }
 
     void read_px_y(const std_msgs::Int16Ptr &msg) {
-        pixel_y = msg->data;
+
+
 //        ROS_INFO("px:%i \t py:%i", pixel_x, pixel_y);
     }
 
@@ -138,8 +142,8 @@ public:
     }
 
     void inverse_kinematic(){
-        float Zg = (pixel_y - central_pixel_y)/1000*GSD; //(px - px)*1e3*m/px/1e3
-        float Yg = (-pixel_x + central_pixel_x)/1000*GSD; //(px - px)*1e3*m/px/1e3
+        float Zg = (pixel_y - central_pixel_y)*GSD/1000; //(px - px)*1e3*m/px/1e3
+        float Yg = (-pixel_x + central_pixel_x)*GSD/1000; //(px - px)*1e3*m/px/1e3
         pitch_ik = asin(Zg/dx); //Zg/abs(Zg)*
         yaw_ik = asin(Yg/(dx*cos(pitch_ik))); //Yg/abs(Yg)*
         ROS_INFO("Inverse");

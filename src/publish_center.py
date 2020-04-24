@@ -1,21 +1,16 @@
 #!/usr/bin/env python
 from __future__ import print_function
 
-import roslib
+
 import sys
 import rospy
 
 from collections import deque
-from imutils.video import VideoStream
-import numpy as np
-import argparse
 import cv2
 import imutils
-import time
 
+from gimbal_controller.msg import BoundingBox
 
-from std_msgs.msg import String
-from std_msgs.msg import Int16
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
@@ -29,13 +24,10 @@ class image_track:
 
     def __init__(self):
 
-        self.image_pub = rospy.Publisher("opencv_camera",Image)
+        # self.image_pub = rospy.Publisher("opencv_camera",Image)
         self.bridge = CvBridge()
         self.image_sub = rospy.Subscriber("/gimbal/camera/image_raw",Image,self.callback)
-        self.pixel_x_pub = rospy.Publisher("pixel_x", Int16, queue_size=10)
-        self.pixel_y_pub = rospy.Publisher("pixel_y", Int16, queue_size=10)
-        counter = 0
-        (dX, dY) = (0, 0)
+        self.pixel_pub = rospy.Publisher("/boundbox", BoundingBox, queue_size=10)
         direction = ""
 
     def callback(self, data):
@@ -75,71 +67,75 @@ class image_track:
             # it to compute the minimum enclosing circle and centroid
             c = max(cnts, key=cv2.contourArea)
             ((x, y), radius) = cv2.minEnclosingCircle(c)
-            M = cv2.moments(c)
-            center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+            msg = BoundingBox()
+            msg.xmin = x - radius
+            msg.xmax = x + radius
+            msg.ymin = y - radius
+            msg.ymax = y + radius
+            msg.id = radius
 
             # Publish on Topic pixel_x a X center value
-            self.pixel_x_pub.publish(center[0])
-            # Publish on Topic pixel_y a Y center value
-            self.pixel_y_pub.publish(center[1])
+            self.pixel_pub.publish(msg)
 
-            # only proceed if the radius meets a minimum size
-            if radius > 10:
-                # draw the circle and centroid on the frame,
-                # then update the list of tracked points
-                cv2.circle(frame, (int(x), int(y)), int(radius),
-                           (0, 255, 255), 2)
-                cv2.circle(frame, center, 5, (0, 0, 255), -1)
-                pts.appendleft(center)
-                # loop over the set of tracked points
 
-        for i in np.arange(1, len(pts)):
-            # if either of the tracked points are None, ignore
-            # them
-            if pts[i - 1] is None or pts[i] is None:
-                continue
+            # # only proceed if the radius meets a minimum size
+            # if radius > 10:
+            #     # draw the circle and centroid on the frame,
+            #     # then update the list of tracked points
+            #     cv2.circle(frame, (int(x), int(y)), int(radius),
+            #                (0, 255, 255), 2)
+            #     cv2.circle(frame, center, 5, (0, 0, 255), -1)
+            #     pts.appendleft(center)
+            #     # loop over the set of tracked points
 
-            # check to see if enough points have been accumulated in
-            # the buffer
-            if counter >= 10 and i == 1 and pts[-10] is not None:
-                # compute the difference between the x and y
-                # coordinates and re-initialize the direction
-                # text variables
-                dX = pts[-10][0] - pts[i][0]
-                dY = pts[-10][1] - pts[i][1]
-                (dirX, dirY) = ("", "")
-
-                # ensure there is significant movement in the
-                # x-direction
-                if np.abs(dX) > 20:
-                    dirX = "East" if np.sign(dX) == 1 else "West"
-
-                # ensure there is significant movement in the
-                # y-direction
-                if np.abs(dY) > 20:
-                    dirY = "North" if np.sign(dY) == 1 else "South"
-
-                # handle when both directions are non-empty
-                if dirX != "" and dirY != "":
-                    direction = "{}-{}".format(dirY, dirX)
-
-                # otherwise, only one direction is non-empty
-                else:
-                    direction = dirX if dirX != "" else dirY
-
-            # otherwise, compute the thickness of the line and
-            # draw the connecting lines
-            thickness = int(np.sqrt(args["buffer"] / float(i + 1)) * 2.5)
-            cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
+        # for i in np.arange(1, len(pts)):
+        #     # if either of the tracked points are None, ignore
+        #     # them
+        #     if pts[i - 1] is None or pts[i] is None:
+        #         continue
+        #
+        #     # check to see if enough points have been accumulated in
+        #     # the buffer
+        #     if counter >= 10 and i == 1 and pts[-10] is not None:
+        #         # compute the difference between the x and y
+        #         # coordinates and re-initialize the direction
+        #         # text variables
+        #         dX = pts[-10][0] - pts[i][0]
+        #         dY = pts[-10][1] - pts[i][1]
+        #         (dirX, dirY) = ("", "")
+        #
+        #         # ensure there is significant movement in the
+        #         # x-direction
+        #         if np.abs(dX) > 20:
+        #             dirX = "East" if np.sign(dX) == 1 else "West"
+        #
+        #         # ensure there is significant movement in the
+        #         # y-direction
+        #         if np.abs(dY) > 20:
+        #             dirY = "North" if np.sign(dY) == 1 else "South"
+        #
+        #         # handle when both directions are non-empty
+        #         if dirX != "" and dirY != "":
+        #             direction = "{}-{}".format(dirY, dirX)
+        #
+        #         # otherwise, only one direction is non-empty
+        #         else:
+        #             direction = dirX if dirX != "" else dirY
+        #
+        #     # otherwise, compute the thickness of the line and
+        #     # draw the connecting lines
+        #     thickness = int(np.sqrt(args["buffer"] / float(i + 1)) * 2.5)
+        #     cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
 
         # print ("dx: ", dirX, "dy: ", dirY)
         # cv2.imshow("Image window", frame)
+        # r.sleep()
         cv2.waitKey(3)
 
 
 def main(args):
     it = image_track()
-    rospy.init_node('image_track', anonymous=True)
+    rospy.init_node('publish_center', anonymous=True)
     try:
         rospy.spin()
     except KeyboardInterrupt:

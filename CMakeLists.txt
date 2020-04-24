@@ -26,7 +26,22 @@ find_package(catkin REQUIRED COMPONENTS gazebo_msgs roscpp rospy sensor_msgs cv_
         pcl_conversions
         pcl_msgs
         pcl_ros
-        std_msgs)
+        std_msgs
+        geometry_msgs
+        message_generation)
+
+add_message_files(
+        FILES
+        BoundingBox.msg
+)
+
+generate_messages(
+        DEPENDENCIES
+        actionlib_msgs
+        geometry_msgs
+        sensor_msgs
+        std_msgs
+)
 
 catkin_package(
         CATKIN_DEPENDS
@@ -37,6 +52,7 @@ catkin_package(
 )
 
 include_directories(include ${catkin_INCLUDE_DIRS})
+
 
 
 foreach(dir launch models urdf worlds config)
@@ -65,5 +81,6 @@ add_executable(pub_camera src/pub_camera.cpp)
 target_link_libraries(pub_camera ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 add_executable(inv_kinematic src/inverse_kinematic.cpp)
+#add_dependencies(inv_kinematic ${gimbal_controller_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(inv_kinematic ${catkin_LIBRARIES})
 
