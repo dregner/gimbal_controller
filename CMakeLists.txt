@@ -64,5 +64,6 @@ target_link_libraries(g_control ${catkin_LIBRARIES})
 add_executable(pub_camera src/pub_camera.cpp)
 target_link_libraries(pub_camera ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
-
+add_executable(inv_kinematic src/inverse_kinematic.cpp)
+target_link_libraries(inv_kinematic ${catkin_LIBRARIES})
 

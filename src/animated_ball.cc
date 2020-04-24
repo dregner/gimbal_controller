@@ -40,7 +40,7 @@ namespace gazebo {
             this->connections.push_back(event::Events::ConnectWorldUpdateBegin(
                     std::bind(&AnimatedWall::OnUpdate, this, std::placeholders::_1)));
 
-            int time_coef = 10;
+            int time_coef = 50;
             // create the animation
             gazebo::common::PoseAnimationPtr anim(
                     // name the animation "test",

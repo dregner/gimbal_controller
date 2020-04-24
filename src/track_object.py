@@ -119,7 +119,8 @@ class image_converter:
         cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
 
       # print ("dx: ", dirX, "dy: ", dirY)
-      cv2.imshow("Image window", frame)
+      frame1 = cv2.resize(frame, (800,600), interpolation = cv2.INTER_AREA)
+      cv2.imshow("Image window", frame1)
       cv2.waitKey(3)
 
 

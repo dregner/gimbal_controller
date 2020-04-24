@@ -59,7 +59,7 @@
                     </material>
                 </visual>
             </link>
-             <plugin name="push_animate" filename="libanimated_ball.so"/>
+             <!-- <plugin name="push_animate" filename="libanimated_ball.so"/> -->
         </model>
 
         <model name="Ball Red">
