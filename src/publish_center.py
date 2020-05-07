@@ -27,7 +27,7 @@ class image_track:
         # self.image_pub = rospy.Publisher("opencv_camera",Image)
         self.bridge = CvBridge()
         self.image_sub = rospy.Subscriber("/gimbal/camera/image_raw",Image,self.callback)
-        self.pixel_pub = rospy.Publisher("/boundbox", BoundingBox, queue_size=10)
+        self.pixel_pub = rospy.Publisher("/boundingbox", BoundingBox, queue_size=10)
         direction = ""
 
     def callback(self, data):

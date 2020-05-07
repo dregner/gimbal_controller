@@ -8,7 +8,7 @@
 #include <control_msgs/JointControllerState.h>
 #include <std_msgs/Float64.h>
 #include <sensor_msgs/Imu.h>
-#include <std_msgs/Int16.h>
+#include <std_msgs/Int64.h>
 #include <gimbal_controller/BoundingBox.h>
 #include <sensor_msgs/JointState.h>
 #include <ignition/math/Pose3.hh>
@@ -85,6 +85,7 @@ private:
     std_msgs::Float64 msg_yaw;
 
 
+
     ros::Publisher pub_roll;
     ros::Publisher pub_pitch;
     ros::Publisher pub_yaw;
@@ -94,9 +95,8 @@ public:
     Inverse_Kinematic() {
 
         sub_pixel = nh_.subscribe("/boundingbox", 10, &Inverse_Kinematic::read_px, this);
-        sub_joint_states = nh_.subscribe("/gimbal/joint_states", 100, &Inverse_Kinematic::read_JS, this);
+//
 
-        pub_roll = nh_.advertise<std_msgs::Float64>("/gimbal/roll_position_controller/command", 100);
         pub_pitch = nh_.advertise<std_msgs::Float64>("/gimbal/pitch_position_controller/command", 100);
         pub_yaw = nh_.advertise<std_msgs::Float64>("/gimbal/yaw_position_controller/command", 1);
 
@@ -108,15 +108,21 @@ public:
 
     }
 
-    void read_px(const gimbal_controller::BoundingBox::ConstrPtr &msg) {
-        int xmin = msg.xmin;
-        int xmax = msg.xmax;
-        int ymin = msg.ymin;
-        int ymax = msg.ymax;
+    void read_px(const gimbal_controller::BoundingBoxConstPtr &msg){
+
+        int xmin = msg->xmin;
+        int xmax = msg->xmax;
+        int ymin = msg->ymin;
+        int ymax = msg->ymax;
+        pixel_x = (xmax-xmin)/2 + xmin;
+        pixel_y = (ymax-ymin)/2 + ymin;
+        ROS_INFO("X: %i Y: %i", pixel_x, pixel_y);
+        sub_joint_states = nh_.subscribe("/gimbal/joint_states", 10, &Inverse_Kinematic::read_JS, this);
+        inverse_kinematic();
 
     }
 
-    void read_px_y(const std_msgs::Int16Ptr &msg) {
+    void read_px_y(const std_msgs::Int64Ptr &msg) {
 
 
 //        ROS_INFO("px:%i \t py:%i", pixel_x, pixel_y);
@@ -137,13 +143,14 @@ public:
         ROS_INFO("yaw: %f", yaw);
         ROS_INFO("pitch: %f", pitch);
 //        control();
-            inverse_kinematic();
+
 
     }
 
     void inverse_kinematic(){
-        float Zg = (pixel_y - central_pixel_y)*GSD/1000; //(px - px)*1e3*m/px/1e3
-        float Yg = (-pixel_x + central_pixel_x)*GSD/1000; //(px - px)*1e3*m/px/1e3
+        float Zg = (pixel_y - central_pixel_y)*GSD/1000; //(px - px)*1e-3*m/px/1e3
+        float Yg = (-pixel_x + central_pixel_x)*GSD/1000; //(px - px)*1e-3*m/px1e3
+        ROS_INFO("Yg: %f Zg: %f", Yg, Zg);
         pitch_ik = asin(Zg/dx); //Zg/abs(Zg)*
         yaw_ik = asin(Yg/(dx*cos(pitch_ik))); //Yg/abs(Yg)*
         ROS_INFO("Inverse");

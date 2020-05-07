@@ -48,7 +48,11 @@ catkin_package(
         gazebo_msgs
         roscpp
         rospy
+        actionlib_msgs
+        geometry_msgs
         sensor_msgs
+        message_runtime
+        std_msgs
 )
 
 include_directories(include ${catkin_INCLUDE_DIRS})

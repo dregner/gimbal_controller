@@ -9,6 +9,7 @@
 #include <std_msgs/Float64.h>
 #include <sensor_msgs/Imu.h>
 #include <std_msgs/Int16.h>
+#include <gimbal_controller/BoundingBox.h>
 #include <sensor_msgs/JointState.h>
 #include <ignition/math/Pose3.hh>
 #include <image_transport/image_transport.h>
@@ -66,7 +67,7 @@ private:
     ros::NodeHandle nh_;
 
     ros::Subscriber sub_joint_states;
-    ros::Subscriber sub_pixel_x;
+    ros::Subscriber sub_pixel;
     ros::Subscriber sub_pixel_y;
 
     std_msgs::Float64 msg_roll;
@@ -82,8 +83,7 @@ private:
 public:
     Gimbal_Control() {
 
-        sub_pixel_x = nh_.subscribe("/pixel_x", 10, &Gimbal_Control::read_px_x, this);
-        sub_pixel_y = nh_.subscribe("/pixel_y", 10, &Gimbal_Control::read_px_y, this);
+        sub_pixel = nh_.subscribe("/boundingbox", 10, &Gimbal_Control::read_px, this);
         sub_joint_states = nh_.subscribe("/gimbal/joint_states", 100, &Gimbal_Control::read_JS, this);
 
         pub_roll = nh_.advertise<std_msgs::Float64>("/gimbal/roll_position_controller/command", 100);
@@ -98,13 +98,16 @@ public:
 
     }
 
-    void read_px_x(const std_msgs::Int16Ptr &msg) {
-        pixel_x = msg->data;
-    }
+    void read_px(const gimbal_controller::BoundingBoxConstPtr &msg){
 
-    void read_px_y(const std_msgs::Int16Ptr &msg) {
-        pixel_y = msg->data;
-//        ROS_INFO("px:%i \t py:%i", pixel_x, pixel_y);
+        int xmin = msg->xmin;
+        int xmax = msg->xmax;
+        int ymin = msg->ymin;
+        int ymax = msg->ymax;
+        pixel_x = (xmax-xmin)/2 + xmin;
+        pixel_y = (ymax-ymin)/2 + ymin;
+        ROS_INFO("X: %i Y: %i", pixel_x, pixel_y);
+
     }
 
     void read_JS(const sensor_msgs::JointStatePtr &msg) {
