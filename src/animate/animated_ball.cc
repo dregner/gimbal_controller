@@ -21,7 +21,7 @@
 #include <stdio.h>
 
 namespace gazebo {
-    class AnimatedWall : public ModelPlugin {
+    class AnimatedBall : public ModelPlugin {
 
 
     public:
@@ -38,7 +38,7 @@ namespace gazebo {
 
 
             this->connections.push_back(event::Events::ConnectWorldUpdateBegin(
-                    std::bind(&AnimatedWall::OnUpdate, this, std::placeholders::_1)));
+                    std::bind(&AnimatedBall::OnUpdate, this, std::placeholders::_1)));
 
             int time_coef = 50;
             // create the animation
@@ -115,5 +115,5 @@ namespace gazebo {
     };
 
 // Register this plugin with the simulator
-    GZ_REGISTER_MODEL_PLUGIN(AnimatedWall)
+    GZ_REGISTER_MODEL_PLUGIN(AnimatedBall)
 }
