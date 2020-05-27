@@ -18,7 +18,7 @@
 int resolution_x = 1920;
 int resolution_y = 1080;
 std::string string_rpa;
-int aov_h;
+double aov_h;
 
 /// Leitura dos pixels
 int pixel_x, pixel_y;
@@ -38,7 +38,7 @@ float rad2deg = 180 / M_PI;
 float pixel_dimenson = 3.4; //Pixel dimension of X5S
 float Lx;
 int focal_length = 30; //Focal length of camera len
-int dx = 5; //Distence to object
+double dx = 5; //Distence to object
 float GSD = dx * pixel_dimenson / focal_length;
 
 
@@ -125,9 +125,9 @@ public:
         resolution_x = GetParams::getResolution_x();
         central_pixel_x = resolution_x / 2;
         central_pixel_y = resolution_y / 2;
+        dx = GetParams::getDistance_dx();
         aov_h = GetParams::getAov_h();
         focal_length = (int) (rad2deg * 2 * atan((float) resolution_x / 2 * pixel_dimenson / 1000)) / aov_h;
-//        GSD = dx * pixel_dimenson / focal_length;
         Lx = 2 * tan(deg2rad * (float) aov_h / 2) * (float) dx;
         GSD = Lx / (float) resolution_x; // GSD from a gazebo environment where doesnt have a pixel dimension (m/px)
     }

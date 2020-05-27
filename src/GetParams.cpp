@@ -11,6 +11,7 @@ std::string GetParams::getRpaName() {
     return string_var;
 }
 
+
 int GetParams::getResolution_y() {
     int resolution_y;
     if (ros::param::has("/camera_y_resolution")) {
@@ -31,13 +32,23 @@ int GetParams::getResolution_x() {
     return resolution_x;
 }
 
-int GetParams::getAov_h() {
-    int aov_h;
+double GetParams::getAov_h() {
+    double aov_h;
     if (ros::param::has("/aov_h")) {
         ros::param::get("/aov_h", aov_h);
     } else {
-        ros::param::param<std::int32_t>("/aov_h", aov_h, 45);
+        ros::param::param<std::double_t>("/aov_h", aov_h, 45);
     }
     return aov_h;
+}
+
+double GetParams::getDistance_dx(){
+    double dx;
+    if (ros::param::has("/distance_riser")) {
+        ros::param::get("/distance_riser", dx);
+    } else {
+        ros::param::param<std::double_t>("/distance_riser", dx, 5);
+    }
+    return dx;
 }
 

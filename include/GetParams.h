@@ -16,7 +16,9 @@ public:
     static std::string getRpaName() ;
     static int getResolution_x();
     static int getResolution_y();
-    static int getAov_h();
+    static double getAov_h();
+    static double getDistance_dx();
+
 
 };
 
