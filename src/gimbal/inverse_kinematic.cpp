@@ -67,7 +67,6 @@ private:
     ros::Subscriber sub_boundingboxes;
     ros::Subscriber sub_found_object;
 
-    ros::Subscriber sub_roll;
     ros::Subscriber sub_pitch;
     ros::Subscriber sub_yaw;
 
@@ -84,9 +83,6 @@ public:
 
         check_parameters();
 
-        sub_roll = nh_.subscribe("/" + GetParams::getRpaName() + "/gimbal_roll_position/state", 10,
-                                 &Inverse_Kinematic::roll_value,
-                                 this);
         sub_pitch = nh_.subscribe("/" + GetParams::getRpaName() + "/gimbal_pitch_position/state", 10,
                                   &Inverse_Kinematic::pitch_value,
                                   this);
@@ -103,7 +99,7 @@ public:
 
 
 //        control_pid.open("control_pid.txt");
-//        inv_kinematic.open("inverse.txt");
+        inv_kinematic.open("inverse.txt");
     }
 
     ~Inverse_Kinematic() {
@@ -126,10 +122,6 @@ public:
         GSD = Lx / (float) resolution_x; // GSD from a gazebo environment where doesnt have a pixel dimension (m/px)
     }
 
-    void roll_value(const control_msgs::JointControllerState::ConstPtr &msg) {
-        roll = msg->process_value;
-
-    }
 
     void pitch_value(const control_msgs::JointControllerState::ConstPtr &msg) {
         pitch = msg->process_value;
@@ -163,12 +155,7 @@ public:
             }
             pixel_x = pixel_x * 0.7 + 0.3 * ((xmax - xmin) / 2 + xmin);
             pixel_y = pixel_y * 0.7 + 0.3 * ((ymax - ymin) / 2 + ymin);
-            cout << "Camera Resolution" << endl;
-            cout << "\tResolution: " << resolution_x << " x " << resolution_y << "\tLx: " << Lx << "\tGSD: "
-                 << GSD << " m/px" << endl;
-            cout << "\tCentral pixel: " << central_pixel_x << " x " << central_pixel_y << endl;
-            cout << "Darknet detection" << endl;
-            cout << "\tn_object: " << object_count << "\tpx: " << pixel_x << "\tpy: " << pixel_y << endl;
+
         } else {
             object_count++;
             if (object_count > object_founded) {
@@ -177,14 +164,10 @@ public:
                 cout << "\033[2J\033[1;1H";     // clear terminal
             }
         }
-        control();
+//        control();
+        inverse_kinematic();
 
 
-
-//        inverse_kinematic();
-
-
-//        ROS_INFO("resolution: %i x %i - GSD: %f", resolution_x, resolution_y, GSD);
         cout << "Gimbal angles" << endl;
         cout << fixed << "\tr: " << round(roll) << "\tp: " << round(pitch) << "\ty: " << round(yaw) << endl;
         cout << "\033[2J\033[1;1H";     // clear terminal
@@ -244,12 +227,12 @@ public:
             if (abs(er_x) > central_pixel_x * GSD) {
                  ux = u_k_x;
             } else {
-                 ux = (0.05 * (er_k_x - 0.75 * er_x) + u_k_x);
+                 ux = (0.07 * (er_k_x - 0.95 * er_x) + u_k_x);
             }
             if (abs(er_y) > central_pixel_y * GSD) {
                  uy = u_k_y;
             } else {
-                 uy = (-0.05 * (er_k_y - 0.75 * er_y) + u_k_y);
+                 uy = (-0.07 * (er_k_y - 0.95 * er_y) + u_k_y);
             }
             msg_pitch.data = uy;
             pub_pitch.publish(msg_pitch);
@@ -283,7 +266,7 @@ public:
 int main(int argc, char **argv) {
 
 
-    ros::init(argc, argv, "Inverse_Kinematic");
+    ros::init(argc, argv, "Gimbal_Control");
 
     Inverse_Kinematic ik;
 
