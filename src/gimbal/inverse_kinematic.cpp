@@ -240,8 +240,7 @@ public:
         dt = actual_time - last_control;
         if (dt >= Ts) {
 
-            cout << "pixel error" << endl;
-            cout << "\ter_x: " << er_x << "\ter_y: " << er_y << endl;
+
             if (abs(er_x) > central_pixel_x * GSD) {
                  ux = u_k_x;
             } else {
@@ -269,7 +268,8 @@ public:
             last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
 
         }
-
+        cout << "pixel error" << endl;
+        cout << "\ter_x: " << er_x << "\ter_y: " << er_y << endl;
         cout << "Control: " << endl;
         cout << "\tUx: " << u_k_x << "\tUy: " << u_k_y << endl;
 
