@@ -270,7 +270,7 @@ public:
         }
         cout << "pixel error" << endl;
         cout << "\ter_x: " << er_x << "\ter_y: " << er_y << endl;
-        cout << "Control: " << endl;
+//        cout << "Control: " << endl;
         cout << "\tUx: " << u_k_x << "\tUy: " << u_k_y << endl;
 
         er_k_y = er_y;
