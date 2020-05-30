@@ -81,8 +81,8 @@ target_link_libraries(animated_ball ${GAZEBO_LIBRARIES})
     # EXECUTABLES
 ##########
 
-add_executable(g_control src/gimbal/control_joint.cpp)
-target_link_libraries(g_control ${catkin_LIBRARIES})
+#add_executable(g_control src/gimbal/control_joint.cpp)
+#target_link_libraries(g_control ${catkin_LIBRARIES})
 
 
 add_executable(pub_camera src/opencv/pub_camera.cpp)

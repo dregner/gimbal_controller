@@ -155,6 +155,15 @@ public:
             }
             pixel_x = pixel_x * 0.7 + 0.3 * ((xmax - xmin) / 2 + xmin);
             pixel_y = pixel_y * 0.7 + 0.3 * ((ymax - ymin) / 2 + ymin);
+            cout << "Camera Resolution" << endl;
+            cout << "\tResolution: " << resolution_x << " x " << resolution_y << "\tLx: " << Lx << "\tGSD: "
+                 << GSD << " m/px" << endl;
+            cout << "\tCentral pixel: " << central_pixel_x << " x " << central_pixel_y << endl;
+            cout << "\tpixel error: " << pixel_x-central_pixel_x << "x " << pixel_y-central_pixel_y << endl;
+            cout << "Darknet detection" << endl;
+            cout << "\tn_object: " << object_count << "\tpx: " << pixel_x << "\tpy: " << pixel_y << endl;
+
+
 
         } else {
             object_count++;
@@ -165,6 +174,7 @@ public:
             }
         }
 //        control();
+
         inverse_kinematic();
 
 
@@ -190,7 +200,7 @@ public:
         yaw_total = round(yaw + yaw_ik);
         double actual_time = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
         dt = actual_time - last_control;
-        cout << "\n" << dt << endl;
+//        cout << "\n" << dt << endl;
         if (dt >= Ts) {
             msg_yaw.data = yaw_total;
             pub_yaw.publish(msg_yaw);
@@ -251,8 +261,6 @@ public:
             last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
 
         }
-        cout << "pixel error" << endl;
-        cout << "\ter_x: " << er_x << "\ter_y: " << er_y << endl;
 //        cout << "Control: " << endl;
         cout << "\tUx: " << u_k_x << "\tUy: " << u_k_y << endl;
 

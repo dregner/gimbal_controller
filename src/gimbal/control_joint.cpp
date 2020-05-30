@@ -9,7 +9,7 @@
 #include <std_msgs/Float64.h>
 #include <sensor_msgs/Imu.h>
 #include <std_msgs/Int16.h>
-#include <gimbal_controller/BoundingBox.h>
+//#include <gimbal_controller/BoundingBox.h>
 #include <sensor_msgs/JointState.h>
 #include <ignition/math/Pose3.hh>
 #include <image_transport/image_transport.h>
