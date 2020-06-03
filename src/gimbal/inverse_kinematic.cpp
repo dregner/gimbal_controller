@@ -53,7 +53,7 @@ double dt, last_control;
 /// Leitura Joint States
 float roll, pitch, yaw;
 float yaw_ik, pitch_ik, yaw_total, pitch_total;
-
+float Kc = 0.1, z0 = 0.95;
 
 using namespace std;
 static std::ofstream inv_kinematic;
@@ -99,7 +99,7 @@ public:
 
 
 //        control_pid.open("control_pid.txt");
-        inv_kinematic.open("inverse.txt");
+//        inv_kinematic.open("inverse.txt");
     }
 
     ~Inverse_Kinematic() {
@@ -153,8 +153,8 @@ public:
                 u_k_x = yaw;
                 u_k_y = pitch;
             }
-            pixel_x = pixel_x * 0.7 + 0.3 * ((xmax - xmin) / 2 + xmin);
-            pixel_y = pixel_y * 0.7 + 0.3 * ((ymax - ymin) / 2 + ymin);
+            pixel_x = pixel_x * 0.8 + 0.2 * ((xmax - xmin) / 2 + xmin);
+            pixel_y = pixel_y * 0.8 + 0.2 * ((ymax - ymin) / 2 + ymin);
             cout << "Camera Resolution" << endl;
             cout << "\tResolution: " << resolution_x << " x " << resolution_y << "\tLx: " << Lx << "\tGSD: "
                  << GSD << " m/px" << endl;
@@ -232,17 +232,15 @@ public:
         double actual_time = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
         dt = actual_time - last_control;
         if (dt >= Ts) {
-
-
             if (abs(er_x) > central_pixel_x * GSD) {
                  ux = u_k_x;
             } else {
-                 ux = (0.07 * (er_k_x - 0.95 * er_x) + u_k_x);
+                 ux = (Kc * (er_x - z0*er_k_x) + u_k_x);
             }
             if (abs(er_y) > central_pixel_y * GSD) {
                  uy = u_k_y;
             } else {
-                 uy = (-0.07 * (er_k_y - 0.95 * er_y) + u_k_y);
+                 uy = (-Kc * (er_y - z0 * er_k_y) + u_k_y);
             }
             msg_pitch.data = uy;
             pub_pitch.publish(msg_pitch);
@@ -261,7 +259,7 @@ public:
             last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
 
         }
-//        cout << "Control: " << endl;
+        cout << "Control: " << endl;
         cout << "\tUx: " << u_k_x << "\tUy: " << u_k_y << endl;
 
         er_k_y = er_y;
