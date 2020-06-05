@@ -83,19 +83,19 @@ public:
 
         check_parameters();
 
-        sub_pitch = nh_.subscribe("/" + GetParams::getRpaName() + "/gimbal_pitch_position/state", 10,
+        sub_pitch = nh_.subscribe("/" + GetParams::getRpaName() + "/gimbal_pitch/state", 10,
                                   &Inverse_Kinematic::pitch_value,
                                   this);
-        sub_yaw = nh_.subscribe("/" + GetParams::getRpaName() + "/gimbal_yaw_position/state", 10,
+        sub_yaw = nh_.subscribe("/" + GetParams::getRpaName() + "/gimbal_yaw/state", 10,
                                 &Inverse_Kinematic::yaw_value,
                                 this);
 
         sub_found_object = nh_.subscribe("darknet_ros/found_object", 10, &Inverse_Kinematic::found_object, this);
         sub_boundingboxes = nh_.subscribe("/darknet_ros/bounding_boxes", 10, &Inverse_Kinematic::read_px, this);
 
-        pub_pitch = nh_.advertise<std_msgs::Float64>("/" + GetParams::getRpaName() + "/gimbal_pitch_position/command",
+        pub_pitch = nh_.advertise<std_msgs::Float64>("/" + GetParams::getRpaName() + "/gimbal_pitch/command",
                                                      100);
-        pub_yaw = nh_.advertise<std_msgs::Float64>("/" + GetParams::getRpaName() + "/gimbal_yaw_position/command", 1);
+        pub_yaw = nh_.advertise<std_msgs::Float64>("/" + GetParams::getRpaName() + "/gimbal_yaw/command", 1);
 
 
 //        control_pid.open("control_pid.txt");
@@ -235,7 +235,7 @@ public:
             if (abs(er_x) > central_pixel_x * GSD) {
                  ux = u_k_x;
             } else {
-                 ux = (Kc * (er_x - z0*er_k_x) + u_k_x);
+                 ux = (Kc * (er_x - z0 * er_k_x) + u_k_x);
             }
             if (abs(er_y) > central_pixel_y * GSD) {
                  uy = u_k_y;
