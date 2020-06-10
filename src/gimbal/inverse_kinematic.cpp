@@ -21,6 +21,7 @@ double aov_h;
 
 /// Leitura dos pixels
 int pixel_x, pixel_y;
+int xmin_, xmin_k = xmin_;
 /// Para resolucao de 800x600
 int central_pixel_x = resolution_x / 2;
 int central_pixel_y = resolution_y / 2;
@@ -107,8 +108,8 @@ public:
     }
 
     static float round(float var) {
-        float value = (int) (var * 1000 + 0.5);
-        return (float) value / 1000;
+        float value = (int) (var * 10000 + 0.5);
+        return (float) value / 10000;
     }
 
     static void check_parameters() {
@@ -138,31 +139,37 @@ public:
 
     void read_px(const darknet_ros_msgs::BoundingBoxes::ConstPtr &msg) {
         object_id = msg->bounding_boxes[object_count].id;
-        if (object_id == 49 || object_id == 32 || object_id == 29) {
-            int xmin = msg->bounding_boxes[object_count].xmin;
-            int xmax = msg->bounding_boxes[object_count].xmax;
-            int ymin = msg->bounding_boxes[object_count].ymin;
-            int ymax = msg->bounding_boxes[object_count].ymax;
+
+        if ((object_id == 4)) {
+            /// && (abs( pixel_x  - ((int) (msg->bounding_boxes[object_count].xmin-msg->bounding_boxes[object_count].xmax)/2 + (int) msg->bounding_boxes[object_count].xmin)) < 50 || first_time))
+            ///object_id == 4 aeroplane || object_id == 32  sport_ball       || object_id == 49 orange              || object_id == 29 frisbee
             if (first_time) {
                 pitch_total = pitch;
                 yaw_total = yaw;
                 first_time = false;
                 last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
-                pixel_x = ((xmax - xmin) / 2 + xmin);
-                pixel_y = ((ymax - ymin) / 2 + ymin);
+                pixel_x = ((int) (msg->bounding_boxes[object_count].xmin - msg->bounding_boxes[object_count].xmax) / 2 +
+                           (int) msg->bounding_boxes[object_count].xmin);
+                pixel_y = ((int) (msg->bounding_boxes[object_count].ymin - msg->bounding_boxes[object_count].ymax) / 2 +
+                           (int) msg->bounding_boxes[object_count].ymin);
+                xmin_k = msg->bounding_boxes[object_count].xmin;
                 u_k_x = yaw;
                 u_k_y = pitch;
             }
-            pixel_x = pixel_x * 0.8 + 0.2 * ((xmax - xmin) / 2 + xmin);
-            pixel_y = pixel_y * 0.8 + 0.2 * ((ymax - ymin) / 2 + ymin);
-            cout << "Camera Resolution" << endl;
-            cout << "\tResolution: " << resolution_x << " x " << resolution_y << "\tLx: " << Lx << "\tGSD: "
-                 << GSD << " m/px" << endl;
-            cout << "\tCentral pixel: " << central_pixel_x << " x " << central_pixel_y << endl;
-            cout << "\tpixel error: " << pixel_x-central_pixel_x << "x " << pixel_y-central_pixel_y << endl;
-            cout << "Darknet detection" << endl;
-            cout << "\tn_object: " << object_count << "\tpx: " << pixel_x << "\tpy: " << pixel_y << endl;
 
+            if (abs(msg->bounding_boxes[object_count].xmin - xmin_k) < 100) {
+                int xmin = msg->bounding_boxes[object_count].xmin;
+                xmin_k = xmin;
+                int xmax = msg->bounding_boxes[object_count].xmax;
+                int ymin = msg->bounding_boxes[object_count].ymin;
+                int ymax = msg->bounding_boxes[object_count].ymax;
+
+                pixel_x = pixel_x * 0.6 + 0.4 * ((xmax - xmin) / 2 + xmin);
+                pixel_y = pixel_y * 0.6 + 0.4 * ((ymax - ymin) / 2 + ymin);
+
+                print();
+                inverse_kinematic();
+            }
 
 
         } else {
@@ -173,18 +180,29 @@ public:
                 cout << "\033[2J\033[1;1H";     // clear terminal
             }
         }
+
+
 //        control();
 
-        inverse_kinematic();
+        cout << "\033[2J\033[1;1H";     // clear terminal
+    }
 
+    void print() {
+        cout << "Camera Resolution" << endl;
+        cout << "\tResolution: " << resolution_x << " x " << resolution_y << "\tLx: " << Lx << "\tGSD: "
+             << GSD << " m/px" << endl;
+
+        cout << "Darknet detection" << endl;
+        cout << "\tn_object: " << object_count << "\ttotal: " << object_founded << endl;
+        cout << "\tobject_id: " << object_id << endl;
+        cout << "PIXEL" << endl;
+        cout << "\tPixel Position: " << pixel_x << " x  " << pixel_y << endl;
+        cout << "\tCentral pixel: " << central_pixel_x << " x " << central_pixel_y << endl;
+        cout << "\tpixel error: " << pixel_x - central_pixel_x << "x " << pixel_y - central_pixel_y << endl;
 
         cout << "Gimbal angles" << endl;
-        cout << fixed << "\tr: " << round(roll) << "\tp: " << round(pitch) << "\ty: " << round(yaw) << endl;
-        cout << "\033[2J\033[1;1H";     // clear terminal
-
-
-
-
+        cout << fixed << "\tr: " << 180 / M_PI * round(roll) << "\tp: " << 180 / M_PI * round(pitch) << "\ty: "
+             << 180 / M_PI * round(yaw) << endl;
     }
 
 
@@ -216,10 +234,11 @@ public:
                               << "\n";
             }
             last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
+
         }
-        cout << "XYZ Gimbal Inverse Kinematic" << endl;
-        cout << "\tYg: " << Yg << "\tZg: " << Zg << endl;
-        cout << "Inverse" << endl;
+//        cout << "XYZ Gimbal Inverse Kinematic" << endl;
+//        cout << "\tYg: " << Yg << "\tZg: " << Zg << endl;
+        cout << "Inverse Kinematic Control:" << endl;
         cout << "\tyaw ik: " << yaw_ik << "\tyaw desired: " << yaw_total << endl;
         cout << "\tpitch ik: " << pitch_ik << "\tpitch desired: " << pitch_total << endl;
 
@@ -227,20 +246,20 @@ public:
 
 
     void control() {
-        float er_x = (central_pixel_x - pixel_x)*GSD;
-        float er_y = (central_pixel_y - pixel_y)*GSD;
+        float er_x = (central_pixel_x - pixel_x) * GSD;
+        float er_y = (central_pixel_y - pixel_y) * GSD;
         double actual_time = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
         dt = actual_time - last_control;
         if (dt >= Ts) {
             if (abs(er_x) > central_pixel_x * GSD) {
-                 ux = u_k_x;
+                ux = u_k_x;
             } else {
-                 ux = (Kc * (er_x - z0 * er_k_x) + u_k_x);
+                ux = (Kc * (er_x - z0 * er_k_x) + u_k_x);
             }
             if (abs(er_y) > central_pixel_y * GSD) {
-                 uy = u_k_y;
+                uy = u_k_y;
             } else {
-                 uy = (-Kc * (er_y - z0 * er_k_y) + u_k_y);
+                uy = (-Kc * (er_y - z0 * er_k_y) + u_k_y);
             }
             msg_pitch.data = uy;
             pub_pitch.publish(msg_pitch);
@@ -259,7 +278,7 @@ public:
             last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
 
         }
-        cout << "Control: " << endl;
+        cout << "PID Control: " << endl;
         cout << "\tUx: " << u_k_x << "\tUy: " << u_k_y << endl;
 
         er_k_y = er_y;
