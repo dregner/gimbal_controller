@@ -73,7 +73,7 @@ endforeach(dir)
 ##########
 
 # Library de mover a parede
-add_library(animated_ball SHARED src/animate/animated_ball.cc src/darknet/darknet_bb.cpp)
+add_library(animated_ball SHARED src/animate/animated_ball.cc src/darknet/darknet_bb.cpp src/odometry/rpa_odometry.cpp)
 target_link_libraries(animated_ball ${GAZEBO_LIBRARIES})
 
 
@@ -94,3 +94,6 @@ target_link_libraries(inv_kinematic ${catkin_LIBRARIES})
 
 add_executable(read_bb src/darknet/darknet_bb.cpp)
 target_link_libraries(read_bb ${catkin_LIBRARIES})
+
+add_executable(odometry_listener src/odometry/rpa_odometry.cpp)
+target_link_libraries(odometry_listener ${catkin_LIBRARIES})

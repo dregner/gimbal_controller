@@ -52,3 +52,11 @@ double GetParams::getDistance_dx(){
     return dx;
 }
 
+bool GetParams::getUse_gimbal(){
+    bool use_gimbal;
+    if (ros::param::has("/use_gimbal")) {
+        ros::param::get("/use_gimbal", use_gimbal);
+    } else {
+        ros::param::param<bool>("/use_gimbal", use_gimbal, false);
+    }
+}
