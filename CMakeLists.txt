@@ -108,23 +108,11 @@ foreach(dir launch models urdf worlds config)
             DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/${dir})
 endforeach(dir)
 
-
-
-##########  LIBRARIES #############
-
-# Library de mover a parede
-add_library(animated_ball SHARED src/animate/animated_ball.cc src/darknet/darknet_bb.cpp)
-target_link_libraries(animated_ball ${GAZEBO_LIBRARIES})
-
-
-##########  EXECUTABLES ##########
+#########  EXECUTABLES ##########
 
 #add_executable(g_control src/gimbal/control_joint.cpp)
 #target_link_libraries(g_control ${catkin_LIBRARIES})
 
-
-add_executable(pub_camera src/opencv/pub_camera.cpp)
-target_link_libraries(pub_camera ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 add_executable(inv_kinematic src/gimbal/inverse_kinematic.cpp src/GetParams.cpp)
 #add_dependencies(inv_kinematic ${gimbal_controller_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -136,5 +124,5 @@ target_link_libraries(gimbal_dji
                         ${catkin_LIBRARIES}
                         ${DJIOSDK_LIBRARIES})
 
-add_executable(read_bb src/darknet/darknet_bb.cpp)
+add_executable(read_bb src/darknet/darknet_bb.cpp src/GetParams.cpp)
 target_link_libraries(read_bb ${catkin_LIBRARIES})

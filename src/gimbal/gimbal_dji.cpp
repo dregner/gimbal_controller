@@ -5,6 +5,7 @@
 #include "unistd.h"
 #include <cstdint>
 #include <iostream>
+#include <fstream>
 #include <GetParams.h>
 
 // DJI SDK includes
@@ -39,10 +40,36 @@ double aov_h;
 int central_pixel_x = resolution_x / 2;
 int central_pixel_y = resolution_y / 2;
 /// DX object
-int dx;
+int dx = 1;
 float Lx, GSD;
 
+/// Position variables
+float roll, pitch, yaw;
+/// Darknet parameters
+int object_founded, object_count, object_id;
+/// Control
+bool first_time = false;
+int Ts = 0.05;
+
+/// Inverse Kinematic CONTROLLER
+float pitch_total, yaw_total;
+double last_control;
+
+/// PID CONTROLLER
+double uy = 0, ux = 0;
+double u_k_x = 0, u_k_y = 0;
+double er_k_x = 0, er_k_y = 0;
+float Kc = 0.8, z0 = 0.92;
+
+
+/// Leitura dos pixels
+int pixel_x, pixel_y;
+int xmin_, xmin_k = xmin_;
+
 using namespace std;
+static std::ofstream inv_kinematic;
+static std::ofstream control_pid;
+
 
 class ControlGimbal_dji {
 private:
@@ -61,29 +88,44 @@ private:
     ros::Subscriber sub_boundingboxes;
     ros::Subscriber sub_found_object;
 
-    float roll, pitch, yaw;
-    int object_founded, object_count, object_id;
-    bool first_time = false;
-    float pitch_total, yaw_total, u_k_x, u_k_y;
-    double last_control;
+    struct RotationAngle {
+        float roll;
+        float pitch;
+        float yaw;
+    } initialAngle, currentAngle;
+
+    struct GimbalContainer {
+        int roll = 0;
+        int pitch = 0;
+        int yaw = 0;
+        int duration = 0;
+        int isAbsolute = 0;
+        bool yaw_cmd_ignore = false;
+        bool pitch_cmd_ignore = false;
+        bool roll_cmd_ignore = false;
+        RotationAngle initialAngle;
+        RotationAngle currentAngle;
+
+        GimbalContainer(int roll = 0,
+                        int pitch = 0,
+                        int yaw = 0,
+                        int duration = 0,
+                        int isAbsolute = 0,
+                        RotationAngle initialAngle = {},
+                        RotationAngle currentAngle = {}) :
+                roll(roll), pitch(pitch), yaw(yaw),
+                duration(duration), isAbsolute(isAbsolute),
+                initialAngle(initialAngle), currentAngle(currentAngle) {}
+    } gimbal;
 
 
-
-    /// Leitura dos pixels
-    int pixel_x, pixel_y;
-    int xmin_, xmin_k = xmin_;
-
-
+//        control_pid.open("pid_control.txt");
+//    inv_kinematic.open("inverse_kinematic.txt");
 
 public:
     ControlGimbal_dji() {
-        check_parameters();
-//        DJI::OSDK::Gimbal::SpeedData gimbalSpeed;
-//        DJI::OSDK::Gimbal::AngleData gimbalAngle;
-//        DJI::OSDK::Vehicle vehicle;
-
-
-          // ROS stuff
+//        check_parameters();
+        // ROS stuff
         gimbal_angle_subscriber = nh.subscribe<geometry_msgs::Vector3Stamped>
                 ("dji_sdk/gimbal_angle", 10, &ControlGimbal_dji::gimbalAngleCallback, this);
         sub_boundingboxes = nh.subscribe("darknet_ros/bounding_box", 10, &ControlGimbal_dji::ReadBb, this);
@@ -92,9 +134,11 @@ public:
                 ("dji_sdk/gimbal_angle_cmd", 10);
         gimbal_speed_cmd_publisher = nh.advertise<geometry_msgs::Vector3Stamped>
                 ("dji_sdk/gimbal_speed_cmd", 10);
+
     }
 
     ~ControlGimbal_dji() {}
+
 
     static void check_parameters() {
         resolution_y = GetParams::getResolution_y();
@@ -103,14 +147,33 @@ public:
         central_pixel_y = resolution_y / 2;
         dx = GetParams::getDistance_dx();
         aov_h = GetParams::getAov_h();
-        Lx = 2 * tan(DEG2RAD(aov_h)/ 2) * (float) dx;
+        Lx = 2 * tan(DEG2RAD(aov_h) / 2) * (float) dx;
         GSD = Lx / (float) resolution_x; // GSD from a gazebo environment where doesnt have a pixel dimension (m/px)
     }
 
-    void Found_obj(const darknet_ros_msgs::ObjectCount::ConstPtr &msg){
+    void Found_obj(const darknet_ros_msgs::ObjectCount::ConstPtr &msg) {
         object_founded = msg->count;
 
     }
+
+    void save_txt() {
+        if (inv_kinematic.is_open()) {
+            inv_kinematic << ros::Time::now().nsec * 1e-9 + ros::Time::now().sec << "\t" << pitch << "\t" << yaw
+                          << "\t" << pitch_total << "\t"
+                          << yaw_total << "\t"
+                          << pixel_x << "\t" << pixel_y << "\t" << central_pixel_x - pixel_x << "\t"
+                          << central_pixel_y - pixel_y
+                          << "\n";
+        }
+        if (control_pid.is_open()) {
+            control_pid << ros::Time::now().nsec * 1e-9 + ros::Time::now().sec << "\t" << pitch << "\t" << yaw
+                        << "\t" << u_k_x << "\t" << u_k_y << "\t"
+                        << central_pixel_x - pixel_x << "\t"
+                        << central_pixel_y - pixel_y << "\t" << pixel_x << "\t" << pixel_y << "\n";
+        }
+    }
+
+
     void setGimbalSeed(int speedRoll, int speedPitch, int speedYaw) {
         gimbalSpeed.vector.y = DEG2RAD(speedRoll); //deg
         gimbalSpeed.vector.x = DEG2RAD(speedPitch); //deg
@@ -120,58 +183,49 @@ public:
 
     void gimbalAngleCallback(const geometry_msgs::Vector3Stamped::ConstPtr &msg) {
         gimbal_angle = *msg;
-        roll = gimbal_angle.vector.y;
-        pitch = gimbal_angle.vector.x;
-        yaw = gimbal_angle.vector.z;
+        currentAngle.roll = gimbal_angle.vector.y;
+        currentAngle.pitch = gimbal_angle.vector.x;
+        currentAngle.yaw = gimbal_angle.vector.z;
     }
 
-    void ReadBb(const darknet_ros_msgs::BoundingBoxes::ConstPtr &msg){
+    void ReadBb(const darknet_ros_msgs::BoundingBoxes::ConstPtr &msg) {
         object_id = msg->bounding_boxes[object_count].id;
 
         if ((object_id == 4)) {
             /// && (abs( pixel_x  - ((int) (msg->bounding_boxes[object_count].xmin-msg->bounding_boxes[object_count].xmax)/2 + (int) msg->bounding_boxes[object_count].xmin)) < 50 || first_time))
             ///object_id == 4 aeroplane || object_id == 32  sport_ball       || object_id == 49 orange              || object_id == 29 frisbee
             if (first_time) {
+                initialAngle.roll = gimbal_angle.vector.y;
+                initialAngle.pitch = gimbal_angle.vector.x;
+                initialAngle.yaw = gimbal_angle.vector.z;
                 pitch_total = pitch;
                 yaw_total = yaw;
                 first_time = false;
                 last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
-                pixel_x = ((int) (msg->bounding_boxes[object_count].xmin - msg->bounding_boxes[object_count].xmax) / 2 +
+                pixel_x = ((int) (msg->bounding_boxes[object_count].xmax - msg->bounding_boxes[object_count].xmin) / 2 +
                            (int) msg->bounding_boxes[object_count].xmin);
-                pixel_y = ((int) (msg->bounding_boxes[object_count].ymin - msg->bounding_boxes[object_count].ymax) / 2 +
+                pixel_y = ((int) (msg->bounding_boxes[object_count].ymax - msg->bounding_boxes[object_count].ymin) / 2 +
                            (int) msg->bounding_boxes[object_count].ymin);
                 xmin_k = msg->bounding_boxes[object_count].xmin;
                 u_k_x = yaw;
                 u_k_y = pitch;
             }
 
-            if (abs(msg->bounding_boxes[object_count].xmin - xmin_k) < 100) {
-                int xmin = msg->bounding_boxes[object_count].xmin;
-                xmin_k = xmin;
-                int xmax = msg->bounding_boxes[object_count].xmax;
-                int ymin = msg->bounding_boxes[object_count].ymin;
-                int ymax = msg->bounding_boxes[object_count].ymax;
-
-                pixel_x = pixel_x * 0.6 + 0.4 * ((xmax - xmin) / 2 + xmin);
-                pixel_y = pixel_y * 0.6 + 0.4 * ((ymax - ymin) / 2 + ymin);
-
-                print();
-                inverse_kinematic();
-            }
-
-
+//            if (abs(msg->bounding_boxes[object_count].xmin - xmin_k) < 100) {
+            int xmin = msg->bounding_boxes[object_count].xmin;
+            int xmax = msg->bounding_boxes[object_count].xmax;
+            int ymin = msg->bounding_boxes[object_count].ymin;
+            int ymax = msg->bounding_boxes[object_count].ymax;
+            pixel_x = pixel_x * 0.6 + 0.4 * ((xmax - xmin) / 2 + xmin);
+            pixel_y = pixel_y * 0.6 + 0.4 * ((ymax - ymin) / 2 + ymin);
+            xmin_k = xmin;
+            inverse_kinematic();
+//            control();
+//            }
         } else {
             object_count++;
-            if (object_count > object_founded) {
-                object_count = 0;
-                cout << "\n\nNOT FOUND PROPER OBJECT" << endl;
-                cout << "\033[2J\033[1;1H";     // clear terminal
-            }
+            if (object_count > object_founded) { object_count = 0; }
         }
-
-
-//        control();
-
         cout << "\033[2J\033[1;1H";     // clear terminal
     }
 
@@ -179,31 +233,24 @@ public:
         double Zg = (float) (pixel_y - central_pixel_y) * GSD; //(px - px)*m/px
         double Yg = (float) (-pixel_x + central_pixel_x) * GSD; //(px - px)*m/px
 
-        pitch_ik = asin(Zg / dx); //Zg/abs(Zg)*
+        double pitch_ik = asin(Zg / dx); //Zg/abs(Zg)*
         pitch_ik = round(pitch_ik);
-        yaw_ik = asin(Yg / (dx * cos(pitch_ik))); //Yg/abs(Yg)*
+        double yaw_ik = asin(Yg / (dx * cos(pitch_ik))); //Yg/abs(Yg)*
         yaw_ik = round(yaw_ik);
-        pitch_total = round(pitch + pitch_ik);
-        yaw_total = round(yaw + yaw_ik);
+        pitch_total = pitch_total * 0.9 + 0.1 * round(pitch + pitch_ik);
+        yaw_total = yaw_total * 0.9 + 0.1 * round(yaw + yaw_ik);
         double actual_time = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
-        dt = actual_time - last_control;
+        double dt = actual_time - last_control;
 //        cout << "\n" << dt << endl;
         if (dt >= Ts) {
-            msg_yaw.data = yaw_total;
-            pub_yaw.publish(msg_yaw);
-            msg_pitch.data = pitch_total;
-            pub_pitch.publish(msg_pitch);
-            if (inv_kinematic.is_open()) {
-                inv_kinematic << ros::Time::now().nsec * 1e-9 + ros::Time::now().sec << "\t" << pitch << "\t" << yaw
-                              << "\t" << pitch_ik + pitch << "\t"
-                              << yaw_ik + yaw << "\t"
-                              << Yg << "\t" << Zg << "\t"
-                              << pixel_x << "\t" << pixel_y << "\t" << central_pixel_x - pixel_x << "\t"
-                              << central_pixel_y - pixel_y
-                              << "\n";
-            }
+            gimbal.initialAngle = initialAngle;
+            gimbal.roll = 0;
+            gimbal.pitch = RAD2DEG(pitch_total);
+            gimbal.yaw = RAD2DEG(yaw_total);
+            gimbal.isAbsolute = 1;
+            doSetGimbalAngle(&gimbal);
             last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
-
+            save_txt();
         }
 //        cout << "XYZ Gimbal Inverse Kinematic" << endl;
 //        cout << "\tYg: " << Yg << "\tZg: " << Zg << endl;
@@ -217,7 +264,7 @@ public:
         float er_x = (central_pixel_x - pixel_x) * GSD;
         float er_y = (central_pixel_y - pixel_y) * GSD;
         double actual_time = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
-        dt = actual_time - last_control;
+        double dt = actual_time - last_control;
         if (dt >= Ts) {
             if (abs(er_x) > central_pixel_x * GSD) {
                 ux = u_k_x;
@@ -229,22 +276,16 @@ public:
             } else {
                 uy = (-Kc * (er_y - z0 * er_k_y) + u_k_y);
             }
-            msg_pitch.data = uy;
-            pub_pitch.publish(msg_pitch);
-            msg_yaw.data = ux;
-            pub_yaw.publish(msg_yaw);
+            gimbal.initialAngle = initialAngle;
+            gimbal.roll = 0;
+            gimbal.pitch = RAD2DEG(uy);
+            gimbal.yaw = RAD2DEG(ux);
+            gimbal.isAbsolute = 1;
+            doSetGimbalAngle(&gimbal);
             u_k_x = ux;
             u_k_y = uy;
-
-
-            if (control_pid.is_open()) {
-                control_pid << ros::Time::now().nsec * 1e-9 + ros::Time::now().sec << "\t" << pitch << "\t" << yaw
-                            << "\t" << u_k_x << "\t" << u_k_y << "\t"
-                            << central_pixel_x - pixel_x << "\t"
-                            << central_pixel_y - pixel_y << "\t" << pixel_x << "\t" << pixel_y << "\n";
-            }
-            last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
-
+            save_txt();
+            last_control = (ros::Time::now().nsec * 1e-9 + ros::Time::now().sec);
         }
         cout << "PID Control: " << endl;
         cout << "\tUx: " << u_k_x << "\tUy: " << u_k_y << endl;
@@ -254,12 +295,28 @@ public:
 
     }
 
+    void doSetGimbalAngle(ControlGimbal_dji::GimbalContainer *gimbal) {
+        dji_sdk::Gimbal gimbal_angle_data;
+        gimbal_angle_data.mode |= 0;
+        gimbal_angle_data.mode |= gimbal->isAbsolute;
+        gimbal_angle_data.mode |= gimbal->yaw_cmd_ignore << 1;
+        gimbal_angle_data.mode |= gimbal->roll_cmd_ignore << 2;
+        gimbal_angle_data.mode |= gimbal->pitch_cmd_ignore << 3;
+        gimbal_angle_data.ts = gimbal->duration;
+        gimbal_angle_data.roll = DEG2RAD(gimbal->roll);
+        gimbal_angle_data.pitch = DEG2RAD(gimbal->pitch);
+        gimbal_angle_data.yaw = DEG2RAD(gimbal->yaw);
+
+        gimbal_angle_cmd_publisher.publish(gimbal_angle_data);
+        // Give time for gimbal to sync
+    }
 };
 
 int main(int argc, char **argv) {
 
     ros::init(argc, argv, "gimbal_track");
     ControlGimbal_dji control;
+
     while (ros::ok()) {
         ros::spinOnce();
     }
