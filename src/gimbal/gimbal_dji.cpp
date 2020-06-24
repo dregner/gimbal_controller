@@ -40,7 +40,7 @@ double aov_h;
 int central_pixel_x = resolution_x / 2;
 int central_pixel_y = resolution_y / 2;
 /// DX object
-int dx = 1;
+double dx = 1;
 float Lx, GSD;
 
 /// Position variables
@@ -95,9 +95,9 @@ private:
     } initialAngle, currentAngle;
 
     struct GimbalContainer {
-        int roll = 0;
-        int pitch = 0;
-        int yaw = 0;
+        float roll = 0;
+        float pitch = 0;
+        float yaw = 0;
         int duration = 0;
         int isAbsolute = 0;
         bool yaw_cmd_ignore = false;
@@ -106,9 +106,9 @@ private:
         RotationAngle initialAngle;
         RotationAngle currentAngle;
 
-        GimbalContainer(int roll = 0,
-                        int pitch = 0,
-                        int yaw = 0,
+        GimbalContainer(float roll = 0,
+                        float pitch = 0,
+                        float yaw = 0,
                         int duration = 0,
                         int isAbsolute = 0,
                         RotationAngle initialAngle = {},
@@ -124,7 +124,7 @@ private:
 
 public:
     ControlGimbal_dji() {
-//        check_parameters();
+        check_parameters();
         // ROS stuff
         gimbal_angle_subscriber = nh.subscribe<geometry_msgs::Vector3Stamped>
                 ("dji_sdk/gimbal_angle", 10, &ControlGimbal_dji::gimbalAngleCallback, this);
@@ -139,7 +139,10 @@ public:
 
     ~ControlGimbal_dji() {}
 
-
+    static float round(float var) {
+        float value =(int) (var * 10000 + 0.5);
+        return (float) value / 10000;
+    }
     static void check_parameters() {
         resolution_y = GetParams::getResolution_y();
         resolution_x = GetParams::getResolution_x();
@@ -183,9 +186,9 @@ public:
 
     void gimbalAngleCallback(const geometry_msgs::Vector3Stamped::ConstPtr &msg) {
         gimbal_angle = *msg;
-        currentAngle.roll = gimbal_angle.vector.y;
-        currentAngle.pitch = gimbal_angle.vector.x;
-        currentAngle.yaw = gimbal_angle.vector.z;
+        currentAngle.roll = DEG2RAD(gimbal_angle.vector.y);
+        currentAngle.pitch = DEG2RAD(gimbal_angle.vector.x);
+        currentAngle.yaw = DEG2RAD(gimbal_angle.vector.z);
     }
 
     void ReadBb(const darknet_ros_msgs::BoundingBoxes::ConstPtr &msg) {
@@ -198,8 +201,8 @@ public:
                 initialAngle.roll = gimbal_angle.vector.y;
                 initialAngle.pitch = gimbal_angle.vector.x;
                 initialAngle.yaw = gimbal_angle.vector.z;
-                pitch_total = pitch;
-                yaw_total = yaw;
+                pitch_total = gimbal_angle.vector.x;
+                yaw_total = gimbal_angle.vector.z;
                 first_time = false;
                 last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
                 pixel_x = ((int) (msg->bounding_boxes[object_count].xmax - msg->bounding_boxes[object_count].xmin) / 2 +
@@ -230,23 +233,23 @@ public:
     }
 
     void inverse_kinematic() {
-        double Zg = (float) (pixel_y - central_pixel_y) * GSD; //(px - px)*m/px
-        double Yg = (float) (-pixel_x + central_pixel_x) * GSD; //(px - px)*m/px
+        float Zg = (float) (pixel_y - central_pixel_y) * GSD; //(px - px)*m/px
+        float Yg = (float) (-pixel_x + central_pixel_x) * GSD; //(px - px)*m/px
 
         double pitch_ik = asin(Zg / dx); //Zg/abs(Zg)*
         pitch_ik = round(pitch_ik);
         double yaw_ik = asin(Yg / (dx * cos(pitch_ik))); //Yg/abs(Yg)*
         yaw_ik = round(yaw_ik);
-        pitch_total = pitch_total * 0.9 + 0.1 * round(pitch + pitch_ik);
-        yaw_total = yaw_total * 0.9 + 0.1 * round(yaw + yaw_ik);
+        pitch_total = pitch_total * 0.9 + 0.1 * round(currentAngle.pitch + pitch_ik);
+        yaw_total = yaw_total * 0.9 + 0.1 * round(currentAngle.yaw + yaw_ik);
         double actual_time = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
         double dt = actual_time - last_control;
 //        cout << "\n" << dt << endl;
         if (dt >= Ts) {
             gimbal.initialAngle = initialAngle;
             gimbal.roll = 0;
-            gimbal.pitch = RAD2DEG(pitch_total);
-            gimbal.yaw = RAD2DEG(yaw_total);
+            gimbal.pitch = pitch_total;
+            gimbal.yaw = yaw_total;
             gimbal.isAbsolute = 1;
             doSetGimbalAngle(&gimbal);
             last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
@@ -278,8 +281,8 @@ public:
             }
             gimbal.initialAngle = initialAngle;
             gimbal.roll = 0;
-            gimbal.pitch = RAD2DEG(uy);
-            gimbal.yaw = RAD2DEG(ux);
+            gimbal.pitch = uy;
+            gimbal.yaw = ux;
             gimbal.isAbsolute = 1;
             doSetGimbalAngle(&gimbal);
             u_k_x = ux;
@@ -303,9 +306,9 @@ public:
         gimbal_angle_data.mode |= gimbal->roll_cmd_ignore << 2;
         gimbal_angle_data.mode |= gimbal->pitch_cmd_ignore << 3;
         gimbal_angle_data.ts = gimbal->duration;
-        gimbal_angle_data.roll = DEG2RAD(gimbal->roll);
-        gimbal_angle_data.pitch = DEG2RAD(gimbal->pitch);
-        gimbal_angle_data.yaw = DEG2RAD(gimbal->yaw);
+        gimbal_angle_data.roll = gimbal->roll;
+        gimbal_angle_data.pitch = gimbal->pitch;
+        gimbal_angle_data.yaw = gimbal->yaw;
 
         gimbal_angle_cmd_publisher.publish(gimbal_angle_data);
         // Give time for gimbal to sync

@@ -25,11 +25,8 @@ find_package(catkin REQUIRED COMPONENTS
         rospy
         sensor_msgs
         cv_bridge
-        genmsg
         image_transport
-        std_msgs
         geometry_msgs
-        message_generation
         dji_sdk
         darknet_ros_msgs)
 
@@ -93,7 +90,6 @@ catkin_package(
         actionlib_msgs
         geometry_msgs
         sensor_msgs
-        message_runtime
         std_msgs
         darknet_ros
         darknet_ros_msgs
@@ -118,7 +114,7 @@ add_executable(inv_kinematic src/gimbal/inverse_kinematic.cpp src/GetParams.cpp)
 #add_dependencies(inv_kinematic ${gimbal_controller_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(inv_kinematic ${catkin_LIBRARIES})
 
-add_executable(gimbal_dji src/gimbal/gimbal_dji.cpp)
+add_executable(gimbal_dji src/gimbal/gimbal_dji.cpp src/GetParams.cpp)
 add_dependencies(gimbal_dji dji_sdk_generate_messages_cpp)
 target_link_libraries(gimbal_dji
                         ${catkin_LIBRARIES}
