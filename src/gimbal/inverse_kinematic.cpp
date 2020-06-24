@@ -12,6 +12,9 @@
 #include <darknet_ros_msgs/BoundingBoxes.h>
 #include <darknet_ros_msgs/ObjectCount.h>
 
+#define C_PI (double)3.141592653589793
+#define DEG2RAD(DEG) ((DEG) * ((C_PI) / (180.0)))
+#define RAD2DEG(RAD) ((RAD) * (180.0) / (C_PI))
 
 ///Parameters of RPA launcher
 int resolution_x = 1920;
@@ -33,7 +36,6 @@ int object_count;
 
 
 /// Camera parameters
-float deg2rad = M_PI / 180;
 float Lx;
 double dx = 1; //Distance to object
 double GSD;
@@ -118,7 +120,7 @@ public:
         central_pixel_y = resolution_y / 2;
         dx = GetParams::getDistance_dx();
         aov_h = GetParams::getAov_h();
-        Lx = 2 * tan(deg2rad * (float) aov_h / 2) * (float) dx;
+        Lx = 2 * tan(DEG2RAD((float) aov_h)/ 2) * (float) dx;
         GSD = Lx / (float) resolution_x; // GSD from a gazebo environment where doesnt have a pixel dimension (m/px)
     }
 
@@ -211,8 +213,8 @@ public:
         cout << "\tPixel err: " << pixel_x - central_pixel_x << " x " << pixel_y - central_pixel_y << endl;
 
         cout << "Gimbal angles" << endl;
-        cout << fixed << "\tr: " << 180 / M_PI * round(roll) << "\tp: " << 180 / M_PI * round(pitch) << "\ty: "
-             << 180 / M_PI * round(yaw) << endl;
+        cout << fixed << "\tr: " << RAD2DEG(round(roll)) << "\tp: " << RAD2DEG(round(pitch)) << "\ty: "
+             << RAD2DEG( round(yaw))<< endl;
     }
 
 
