@@ -37,7 +37,7 @@
         <model name="Ball Green">
             <static>true</static>
             <link name="link">
-                <pose>0.5 0 1 0 0 0</pose>
+                <pose>0 6 15 0 0 0</pose>
                 <collision name="collision">
                     <geometry>
                         <sphere>
@@ -59,13 +59,12 @@
                     </material>
                 </visual>
             </link>
-              <plugin name="push_animate" filename="libanimated_ball.so"/>
         </model>
 
         <model name="Ball Red">
             <static>true</static>
             <link name="link">
-                <pose>0 3 0.5 0 0 0</pose>
+                <pose>3 12 8 0 0 0</pose>
                 <collision name="collision">
                     <geometry>
                         <sphere>
@@ -87,13 +86,36 @@
                     </material>
                 </visual>
             </link>
-<!--            <plugin name="push_animate" filename="libanimated_ball.so"/>-->
         </model>
 
 
         <!-- A ground plane -->
         <include>
             <uri>model://ground_plane</uri>
+        </include>
+
+        <include>
+            <uri>model://airplane_animation</uri>
+            <name>Airplane Animation</name>
+            <pose>0 0 0 0 0 0</pose>
+        </include>
+
+        <include>
+            <uri>model://airplane</uri>
+            <name>Airplane 1</name>
+            <pose>5 0 12 0 0.7 0.2</pose>
+        </include>
+
+        <include>
+            <uri>model://airplane</uri>
+            <name>Airplane 2</name>
+            <pose>3 -7 12 -0.6 0 -0.1</pose>
+        </include>
+
+        <include>
+            <uri>model://airplane</uri>
+            <name>Airplane 3</name>
+            <pose>2 7 10 0.8 0 0.3</pose>
         </include>
 
 

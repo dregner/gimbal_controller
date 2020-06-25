@@ -2,6 +2,11 @@
 <robot name="gimbal" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
     <xacro:include filename="$(find gimbal_controller)/urdf/generic_gimbal_base.xacro"/>
+    <xacro:property name="support_height" value="$(arg support_height)"/>
+    <xacro:property name="x_resolution" value="$(arg x_resolution)"/>
+    <xacro:property name="y_resolution" value="$(arg y_resolution)"/>
+    <xacro:property name="h_aov" value="$(arg h_aov)"/>
+    <xacro:property name="visualize" value="$(arg visualize)"/>
 
     <xacro:property name="pi" value="3.1415926535897931"/>
 
@@ -12,7 +17,7 @@
         <axis xyz="0 0 1"/>
         <!--<limit eff
         ort="10" velocity="<1.0" lower="-1.57" upper="1.57"/>-->
-        <origin xyz="0 0 0.5" rpy="0 0 0"/>
+        <origin xyz="0 0 ${support_height/2}" rpy="0 0 0"/>
         <parent link="world"/>
         <child link="base_link"/>
     </joint>
@@ -20,17 +25,17 @@
     <link name="base_link">
         <colision>
             <geometry>
-                <box size="0.1 0.1 1"/>
+                <box size="0.1 0.1 ${support_height}"/>
             </geometry>
         </colision>
         <visual>
             <geometry>
-                <box size="0.1 0.1 1"/>
+                <box size="0.1 0.1 ${support_height}"/>
             </geometry>
         </visual>
         <inertial>
             <mass value="10"/>
-            <xacro:box_inertia x="0.1" y="0.1" z="1" mass="10"/>
+            <xacro:box_inertia x="0.1" y="0.1" z="${support_height}" mass="10"/>
         </inertial>
     </link>
 
@@ -38,7 +43,7 @@
         <axis xyz="0 0 1"/>
         <!--<limit eff
         ort="10" velocity="<1.0" lower="-1.57" upper="1.57"/>-->
-        <origin xyz="0.25 0 0.5" rpy="0 0 0"/>
+        <origin xyz="0.25 0 ${support_height/2}" rpy="0 0 0"/>
         <parent link="base_link"/>
         <child link="base_link_1"/>
     </joint>
@@ -69,18 +74,19 @@
 
 
     <xacro:generic_gimbal
-            robot_namespace="gimbal"
-            camera_suffix=""
+            robot_namespace="m210"
             parent_link="base_link_1"
-            horizontal_fov="${pi/180*33.31}"
-            image_width="5280"
-            image_height="3956"
+            camera_suffix="labmetro"
+            horizontal_fov="${pi/180*h_aov}"
+            image_width="${x_resolution}"
+            image_height="${y_resolution}"
             image_format="R8G8B8"
             max_range="100"
-            visualize="true"
-            type="fixed"
-            mass="1"
+            visualize="${visualize}"
+            type="continuous"
+            mass="0.036"
             z="-0.05"
+            y="0"
             x="0.25">
     </xacro:generic_gimbal>
 

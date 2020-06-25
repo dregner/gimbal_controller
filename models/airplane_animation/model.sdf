@@ -1,0 +1,63 @@
+<?xml version="1.0" ?>
+<sdf version="1.5">
+    <model name="airplane animation">
+        <static>true</static>
+        <link name="link">
+            <pose>0 0 0 0 0 0</pose>
+            <collision name="collision">
+                <geometry>
+                    <mesh>
+                        <uri>model://airplane_animation/meshes/piper_pa18.dae</uri>
+                    </mesh>
+                </geometry>
+            </collision>
+            <visual name="visual">
+                <geometry>
+                    <mesh>
+                        <uri>model://airplane_animation/meshes/piper_pa18.dae</uri>
+                        <scale>0.1 0.1 0.1</scale>
+                    </mesh>
+                </geometry>
+                <material>
+                    <script>
+                        <uri> model://airplane_animation/materials/script</uri>
+                        <uri> model://airplane_animation/materials/textures</uri>
+                        <name>Airplane/Normal</name>
+                    </script>
+                </material>
+            </visual>
+        </link>
+                <plugin name="push_animate" filename="libanimated_object_1.so"/>
+                    <plugin filename="librotors_gazebo_odometry_plugin.so" name="odometry_sensor_ball">
+                        <linkName>link</linkName>
+                        <robotNamespace>soccer_ball</robotNamespace>
+                        <poseTopic>pose</poseTopic>
+                        <poseWithCovarianceTopic>pose_with_covariance</poseWithCovarianceTopic>
+                        <positionTopic>position</positionTopic>
+                        <transformTopic>transform</transformTopic>
+                        <odometryTopic>odometry</odometryTopic>
+                        <parentFrameId>world</parentFrameId> <!-- Use the scoped link name here. e.g. Model::link. -->
+                        <childFrameId>odometry_sensor_ball_link</childFrameId>
+                        <measurementDivisor>1
+                        </measurementDivisor> <!-- only every (seq % measurementDivisor) == 0 measurement is published [int] -->
+                        <measurementDelay>0
+                        </measurementDelay> <!-- time that measurement gets held back before it's published in [simulation cycles (int)] -->
+                        <unknownDelay>0.0</unknownDelay> <!-- additional delay, that just gets added to the timestamp [s] -->
+                        <noiseNormalPosition>0 0 0
+                        </noiseNormalPosition> <!-- standard deviation of additive white gaussian noise [m] -->
+                        <noiseNormalQuaternion>0 0 0
+                        </noiseNormalQuaternion> <!-- standard deviation white gaussian noise [rad]: q_m = q*quaternionFromSmallAngleApproximation(noiseNormalQ) -->
+                        <noiseNormalLinearVelocity>0 0 0
+                        </noiseNormalLinearVelocity> <!-- standard deviation of additive white gaussian noise [m/s] -->
+                        <noiseNormalAngularVelocity>0 0 0
+                        </noiseNormalAngularVelocity> <!-- standard deviation of additive white gaussian noise [rad/s] -->
+                        <noiseUniformPosition>0 0 0</noiseUniformPosition> <!-- symmetric bounds of uniform noise [m] -->
+                        <noiseUniformQuaternion>0 0 0
+                        </noiseUniformQuaternion> <!-- symmetric bounds of uniform noise [rad], computation see above -->
+                        <noiseUniformLinearVelocity>0 0 0
+                        </noiseUniformLinearVelocity> <!-- symmetric bounds of uniform noise [m/s] -->
+                        <noiseUniformAngularVelocity>0 0 0
+                        </noiseUniformAngularVelocity> <!-- symmetric bounds of uniform noise [rad/s] -->
+                    </plugin>
+    </model>
+</sdf>

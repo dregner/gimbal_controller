@@ -12,6 +12,9 @@
 #include <darknet_ros_msgs/BoundingBoxes.h>
 #include <darknet_ros_msgs/ObjectCount.h>
 
+#define C_PI (double)3.141592653589793
+#define DEG2RAD(DEG) ((DEG) * ((C_PI) / (180.0)))
+#define RAD2DEG(RAD) ((RAD) * (180.0) / (C_PI))
 
 ///Parameters of RPA launcher
 int resolution_x = 1920;
@@ -33,9 +36,8 @@ int object_count;
 
 
 /// Camera parameters
-float deg2rad = M_PI / 180;
 float Lx;
-double dx = 5; //Distence to object
+double dx = 1; //Distance to object
 double GSD;
 
 /// Parametros de controle para POS Y Pixel PID
@@ -98,8 +100,8 @@ public:
         pub_yaw = nh_.advertise<std_msgs::Float64>("/" + GetParams::getRpaName() + "/gimbal_yaw/command", 1);
 
 
-//        control_pid.open("pid_control.txt");
-        inv_kinematic.open("inverse_kinematic.txt");
+//        control_pid.open("pid_control_dx5_d5.txt");
+        inv_kinematic.open("inverse_kinematic_dx10_d1.txt");
     }
 
     ~Inverse_Kinematic() {
@@ -118,7 +120,7 @@ public:
         central_pixel_y = resolution_y / 2;
         dx = GetParams::getDistance_dx();
         aov_h = GetParams::getAov_h();
-        Lx = 2 * tan(deg2rad * (float) aov_h / 2) * (float) dx;
+        Lx = 2 * tan(DEG2RAD((float) aov_h) / 2) * (float) dx;
         GSD = Lx / (float) resolution_x; // GSD from a gazebo environment where doesnt have a pixel dimension (m/px)
     }
 
@@ -167,31 +169,27 @@ public:
             pixel_x = pixel_x * 0.6 + 0.4 * ((xmax - xmin) / 2 + xmin);
             pixel_y = pixel_y * 0.6 + 0.4 * ((ymax - ymin) / 2 + ymin);
 
-//            if ((abs(pixel_x - pixel_x_k) < 80) && (abs(pixel_y - pixel_y_k) < 80)){
-            pixel_x_k = pixel_x;
-            pixel_y_k = pixel_y;
-            print();
-            if (inv_kinematic.is_open()) {
-                inverse_kinematic();
-            }
-            if (control_pid.is_open()) {
-                control();
+            if ((abs(pixel_x - pixel_x_k) < 100) && (abs(pixel_y - pixel_y_k) < 100)) {
+                pixel_x_k = pixel_x;
+                pixel_y_k = pixel_y;
+                print();
+                if (inv_kinematic.is_open()) {
+                    inverse_kinematic();
+                }
+                if (control_pid.is_open()) {
+                    control();
 
+                }
+            } else {
+                object_count++;
+                if (object_count > object_founded) {
+                    object_count = 0;
+                }
             }
-//            } else {
-//                object_count++;
-//                if (object_count > object_founded) {
-//                    object_count = 0;
-//                    cout << "\n\nNOT FOUND PROPER OBJECT" << endl;
-//                    cout << "\033[2J\033[1;1H";     // clear terminal
-//                }
-//            }
         } else {
             object_count++;
             if (object_count > object_founded) {
                 object_count = 0;
-                cout << "\n\nNOT FOUND PROPER OBJECT" << endl;
-                cout << "\033[2J\033[1;1H";     // clear terminal
             }
         }
         cout << "\033[2J\033[1;1H";     // clear terminal
@@ -201,7 +199,6 @@ public:
         cout << "Camera Resolution" << endl;
         cout << "\tResolution: " << resolution_x << " x " << resolution_y << "\tLx: " << Lx << "\tGSD: "
              << GSD << " m/px" << endl;
-
         cout << "Darknet detection" << endl;
         cout << "\tn_object: " << object_count << "\ttotal: " << object_founded << endl;
         cout << "\tobject_id: " << object_id << endl;
@@ -209,10 +206,9 @@ public:
         cout << "\tPixel Pos: " << pixel_x << " x  " << pixel_y << endl;
         cout << "\tPixel REF: " << central_pixel_x << " x " << central_pixel_y << endl;
         cout << "\tPixel err: " << pixel_x - central_pixel_x << " x " << pixel_y - central_pixel_y << endl;
-
         cout << "Gimbal angles" << endl;
-        cout << fixed << "\tr: " << 180 / M_PI * round(roll) << "\tp: " << 180 / M_PI * round(pitch) << "\ty: "
-             << 180 / M_PI * round(yaw) << endl;
+        cout << fixed << "\tr: " << RAD2DEG(round(roll)) << "\tp: " << RAD2DEG(round(pitch)) << "\ty: "
+             << RAD2DEG(round(yaw)) << endl;
     }
 
 
@@ -236,20 +232,10 @@ public:
             msg_pitch.data = pitch_total;
             pub_pitch.publish(msg_pitch);
 //            }
-            if (inv_kinematic.is_open()) {
-                double time = (ros::Time::now().nsec * 1e-9 + ros::Time::now().sec - start_time);
-                inv_kinematic << time << "\t" << pitch << "\t" << yaw
-                              << "\t" << pitch_total << "\t"
-                              << yaw_total << "\t"
-                              << pixel_x << "\t" << pixel_y << "\t" << central_pixel_x - pixel_x << "\t"
-                              << central_pixel_y - pixel_y
-                              << "\n";
-            }
+            save_txt();
             last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
 
         }
-//        cout << "XYZ Gimbal Inverse Kinematic" << endl;
-//        cout << "\tYg: " << Yg << "\tZg: " << Zg << endl;
         cout << "Inverse Kinematic Control:" << endl;
         cout << "\tyaw ik: " << yaw_ik << "\tyaw desired: " << yaw_total << endl;
         cout << "\tpitch ik: " << pitch_ik << "\tpitch desired: " << pitch_total << endl;
@@ -278,16 +264,7 @@ public:
             pub_yaw.publish(msg_yaw);
             u_k_x = ux;
             u_k_y = uy;
-
-
-            if (control_pid.is_open()) {
-                double time = (ros::Time::now().nsec * 1e-9 + ros::Time::now().sec) - start_time;
-
-                control_pid << time << "\t" << pitch << "\t" << yaw
-                            << "\t" << u_k_x << "\t" << u_k_y << "\t"
-                            << central_pixel_x - pixel_x << "\t"
-                            << central_pixel_y - pixel_y << "\t" << pixel_x << "\t" << pixel_y << "\n";
-            }
+            save_txt();
             last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
 
         }
@@ -299,6 +276,25 @@ public:
 
     }
 
+    void save_txt() {
+        if (inv_kinematic.is_open()) {
+            double time = (ros::Time::now().nsec * 1e-9 + ros::Time::now().sec - start_time);
+            inv_kinematic << time << "\t" << pitch << "\t" << yaw
+                          << "\t" << pitch_total << "\t"
+                          << yaw_total << "\t"
+                          << pixel_x << "\t" << pixel_y << "\t" << central_pixel_x - pixel_x << "\t"
+                          << central_pixel_y - pixel_y
+                          << "\n";
+        }
+        if (control_pid.is_open()) {
+            double time = (ros::Time::now().nsec * 1e-9 + ros::Time::now().sec) - start_time;
+
+            control_pid << time << "\t" << pitch << "\t" << yaw
+                        << "\t" << u_k_x << "\t" << u_k_y << "\t"
+                        << central_pixel_x - pixel_x << "\t"
+                        << central_pixel_y - pixel_y << "\t" << pixel_x << "\t" << pixel_y << "\n";
+        }
+    }
 };
 
 int main(int argc, char **argv) {
