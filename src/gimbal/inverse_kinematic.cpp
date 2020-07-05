@@ -248,12 +248,12 @@ public:
         float er_y = (central_pixel_y - pixel_y) * GSD;
         double dt = (ros::Time::now().nsec * 1e-9 + ros::Time::now().sec) - last_control;
         if (dt >= Ts) {
-            if (abs(er_x) > central_pixel_x * GSD) {
+            if (abs(er_x) > central_pixel_x * GSD) { /// Anti-windup PID X axis
                 ux = u_k_x;
             } else {
                 ux = (Kc * (er_x - z0 * er_k_x) + u_k_x);
             }
-            if (abs(er_y) > central_pixel_y * GSD) {
+            if (abs(er_y) > central_pixel_y * GSD) { /// Anti-windup PID Y axis
                 uy = u_k_y;
             } else {
                 uy = (-Kc * (er_y - z0 * er_k_y) + u_k_y);
