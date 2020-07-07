@@ -122,3 +122,13 @@ target_link_libraries(gimbal_dji
 
 add_executable(read_bb src/darknet/darknet_bb.cpp src/GetParams.cpp)
 target_link_libraries(read_bb ${catkin_LIBRARIES})
+
+add_executable(read_gimbal src/gimbal/read_gimbal.cpp)
+target_link_libraries(read_gimbal
+        ${catkin_LIBRARIES}
+        ${DJIOSDK_LIBRARIES})
+
+add_executable(write_gimbal src/gimbal/write_gimbal_angle.cpp)
+target_link_libraries(write_gimbal
+        ${catkin_LIBRARIES}
+        ${DJIOSDK_LIBRARIES})

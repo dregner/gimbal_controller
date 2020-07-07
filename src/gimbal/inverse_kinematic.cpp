@@ -11,10 +11,8 @@
 #include <std_msgs/Int64.h>
 #include <darknet_ros_msgs/BoundingBoxes.h>
 #include <darknet_ros_msgs/ObjectCount.h>
-
-#define C_PI (double)3.141592653589793
-#define DEG2RAD(DEG) ((DEG) * ((C_PI) / (180.0)))
-#define RAD2DEG(RAD) ((RAD) * (180.0) / (C_PI))
+#define DEG2RAD(DEG) ((DEG) * ((M_PI) / (180.0)))
+#define RAD2DEG(RAD) ((RAD) * (180.0) / (M_PI))
 
 ///Parameters of RPA launcher
 int resolution_x = 1920;
