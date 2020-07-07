@@ -29,13 +29,8 @@ void gimbalAngleCallback(const geometry_msgs::Vector3Stamped::ConstPtr &msg) {
 
     ros::spinOnce();
 }
-
-void gimbal_angle_func(int input) {
-    cout << "Value: " << input << endl;
-
-    ros::spinOnce();
+void set_angle(){
     dji_sdk::Gimbal gimbal_angle_data;
-    ROS_INFO("Initial Gimbal rotation angle: [ %f, %f, %f ] deg", roll, pitch, yaw);
     gimbal_angle_data.mode |= 0;
     gimbal_angle_data.mode |= mode; //Absulote = 1, Incremental = 0;
     gimbal_angle_data.mode |= 0 << 1;
@@ -47,9 +42,21 @@ void gimbal_angle_func(int input) {
     gimbal_angle_data.yaw = inputValue_y;
     gimbal_angle_pub.publish(gimbal_angle_data);
     sleep(2);
+}
+
+void gimbal_angle_func(int input) {
+    cout << "Value: " << input << endl;
+
+    ros::spinOnce();
+    ROS_INFO("Initial Gimbal rotation angle: [ %f, %f, %f ] deg", roll, pitch, yaw);
+
+    set_angle();
+
     ros::spinOnce();
     ROS_INFO("Initial Gimbal rotation angle: [ %f, %f, %f ] deg", roll, pitch, yaw);
 }
+
+
 
 int main(int argc, char **argv) {
     ros::init(argc, argv, "write_sdk_gimbal");
@@ -75,17 +82,17 @@ int main(int argc, char **argv) {
             gimbal_angle_func(mode);
             break;
         case 'b':
-            cout << "Roll value (deg):";
+            cout << "Roll value (deg): ";
             cin >> inputValue_r;
             gimbal_angle_func(inputValue_r);
             break;
         case 'c':
-            cout << "Pitch value (deg):";
+            cout << "Pitch value (deg): ";
             cin >> inputValue_p;
             gimbal_angle_func(inputValue_p);
             break;
         case 'd':
-            cout << "Yaw value (deg):";
+            cout << "Yaw value (deg): ";
             cin >> inputValue_y;
             gimbal_angle_func(inputValue_y);
             break;
