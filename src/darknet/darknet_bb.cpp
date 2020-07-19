@@ -4,8 +4,6 @@
 #include <ros/ros.h>
 #include <iostream>
 #include <fstream>
-
-#include <control_msgs/JointControllerState.h>
 #include <darknet_ros_msgs/BoundingBoxes.h>
 #include <darknet_ros_msgs/ObjectCount.h>
 
