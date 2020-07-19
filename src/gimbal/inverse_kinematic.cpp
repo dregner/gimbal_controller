@@ -80,9 +80,6 @@ private:
 public:
     Inverse_Kinematic() {
 
-
-        check_parameters();
-
         sub_pitch = nh_.subscribe("/" + GetParams::getRpaName() + "/gimbal_pitch/state", 10,
                                   &Inverse_Kinematic::pitch_value,
                                   this);
@@ -111,16 +108,6 @@ public:
         return (float) value / 10000;
     }
 
-    static void check_parameters() {
-        resolution_y = GetParams::getResolution_y();
-        resolution_x = GetParams::getResolution_x();
-        central_pixel_x = resolution_x / 2;
-        central_pixel_y = resolution_y / 2;
-        dx = GetParams::getDistance_dx();
-        aov_h = GetParams::getAov_h();
-        Lx = 2 * tan(DEG2RAD((float) aov_h)/ 2) * (float) dx;
-        GSD = Lx / (float) resolution_x; // GSD from a gazebo environment where doesnt have a pixel dimension (m/px)
-    }
 
 
     void pitch_value(const control_msgs::JointControllerState::ConstPtr &msg) {

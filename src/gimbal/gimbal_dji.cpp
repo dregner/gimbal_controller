@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <iostream>
 #include <fstream>
-#include <GetParams.h>
 
 // DJI SDK includes
 #include <dji_sdk/Activation.h>
@@ -124,7 +123,6 @@ private:
 
 public:
     ControlGimbal_dji() {
-        check_parameters();
         // ROS stuff
         gimbal_angle_subscriber = nh.subscribe<geometry_msgs::Vector3Stamped>
                 ("dji_sdk/gimbal_angle", 10, &ControlGimbal_dji::gimbalAngleCallback, this);
@@ -142,16 +140,6 @@ public:
     static float round(float var) {
         float value =(int) (var * 10000 + 0.5);
         return (float) value / 10000;
-    }
-    static void check_parameters() {
-        resolution_y = GetParams::getResolution_y();
-        resolution_x = GetParams::getResolution_x();
-        central_pixel_x = resolution_x / 2;
-        central_pixel_y = resolution_y / 2;
-        dx = GetParams::getDistance_dx();
-        aov_h = GetParams::getAov_h();
-        Lx = 2 * tan(DEG2RAD(aov_h) / 2) * (float) dx;
-        GSD = Lx / (float) resolution_x; // GSD from a gazebo environment where doesnt have a pixel dimension (m/px)
     }
 
     void Found_obj(const darknet_ros_msgs::ObjectCount::ConstPtr &msg) {

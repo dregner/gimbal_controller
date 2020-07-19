@@ -13,13 +13,6 @@ include_directories(${std_msgs_INCLUDE_DIRS})
 ## Adicionado a biblioteca do OpenCV
 find_package(OpenCV REQUIRED)
 
-# Find Gazebo
-find_package(gazebo REQUIRED)
-include_directories(${GAZEBO_INCLUDE_DIRS})
-link_directories(${GAZEBO_LIBRARY_DIRS})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
-
-
 find_package(catkin REQUIRED COMPONENTS
         roscpp
         rospy
@@ -110,17 +103,16 @@ endforeach(dir)
 #target_link_libraries(g_control ${catkin_LIBRARIES})
 
 
-add_executable(inv_kinematic src/gimbal/inverse_kinematic.cpp src/GetParams.cpp)
-#add_dependencies(inv_kinematic ${gimbal_controller_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_executable(inv_kinematic src/gimbal/inverse_kinematic.cpp)
 target_link_libraries(inv_kinematic ${catkin_LIBRARIES})
 
-add_executable(gimbal_dji src/gimbal/gimbal_dji.cpp src/GetParams.cpp)
+add_executable(gimbal_dji src/gimbal/gimbal_dji.cpp)
 add_dependencies(gimbal_dji dji_sdk_generate_messages_cpp)
 target_link_libraries(gimbal_dji
                         ${catkin_LIBRARIES}
                         ${DJIOSDK_LIBRARIES})
 
-add_executable(read_bb src/darknet/darknet_bb.cpp src/GetParams.cpp)
+add_executable(read_bb src/darknet/darknet_bb.cpp)
 target_link_libraries(read_bb ${catkin_LIBRARIES})
 
 add_executable(read_gimbal src/gimbal/read_gimbal.cpp)
