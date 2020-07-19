@@ -103,17 +103,17 @@ endforeach(dir)
 #target_link_libraries(g_control ${catkin_LIBRARIES})
 
 
-add_executable(inv_kinematic src/gimbal/inverse_kinematic.cpp)
-target_link_libraries(inv_kinematic ${catkin_LIBRARIES})
+#add_executable(inv_kinematic src/gimbal/inverse_kinematic.cpp)
+#target_link_libraries(inv_kinematic ${catkin_LIBRARIES})
 
-add_executable(gimbal_dji src/gimbal/gimbal_dji.cpp)
-add_dependencies(gimbal_dji dji_sdk_generate_messages_cpp)
-target_link_libraries(gimbal_dji
-                        ${catkin_LIBRARIES}
-                        ${DJIOSDK_LIBRARIES})
+#add_executable(gimbal_dji src/gimbal/gimbal_dji.cpp)
+#add_dependencies(gimbal_dji dji_sdk_generate_messages_cpp)
+#target_link_libraries(gimbal_dji
+#                        ${catkin_LIBRARIES}
+#                        ${DJIOSDK_LIBRARIES})
 
-add_executable(read_bb src/darknet/darknet_bb.cpp)
-target_link_libraries(read_bb ${catkin_LIBRARIES})
+#add_executable(read_bb src/darknet/darknet_bb.cpp)
+#target_link_libraries(read_bb ${catkin_LIBRARIES})
 
 add_executable(read_gimbal src/gimbal/read_gimbal.cpp)
 target_link_libraries(read_gimbal
