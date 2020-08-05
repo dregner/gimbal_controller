@@ -93,30 +93,6 @@ private:
         float yaw;
     } initialAngle, currentAngle;
 
-    struct GimbalContainer {
-        float roll = 0;
-        float pitch = 0;
-        float yaw = 0;
-        int duration = 0;
-        int isAbsolute = 0;
-        bool yaw_cmd_ignore = false;
-        bool pitch_cmd_ignore = false;
-        bool roll_cmd_ignore = false;
-        RotationAngle initialAngle;
-        RotationAngle currentAngle;
-
-        GimbalContainer(float roll = 0,
-                        float pitch = 0,
-                        float yaw = 0,
-                        int duration = 0,
-                        int isAbsolute = 0,
-                        RotationAngle initialAngle = {},
-                        RotationAngle currentAngle = {}) :
-                roll(roll), pitch(pitch), yaw(yaw),
-                duration(duration), isAbsolute(isAbsolute),
-                initialAngle(initialAngle), currentAngle(currentAngle) {}
-    } gimbal;
-
 
 //        control_pid.open("pid_control.txt");
 //    inv_kinematic.open("inverse_kinematic.txt");
@@ -234,12 +210,7 @@ public:
         double dt = actual_time - last_control;
 //        cout << "\n" << dt << endl;
         if (dt >= Ts) {
-            gimbal.initialAngle = initialAngle;
-            gimbal.roll = 0;
-            gimbal.pitch = pitch_total;
-            gimbal.yaw = yaw_total;
-            gimbal.isAbsolute = 1;
-            doSetGimbalAngle(&gimbal);
+            doSetGimbalAngle(0,pitch_total, yaw_total, false, 1);
             last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
             save_txt();
         }
@@ -267,12 +238,7 @@ public:
             } else {
                 uy = (-Kc * (er_y - z0 * er_k_y) + u_k_y);
             }
-            gimbal.initialAngle = initialAngle;
-            gimbal.roll = 0;
-            gimbal.pitch = uy;
-            gimbal.yaw = ux;
-            gimbal.isAbsolute = 1;
-            doSetGimbalAngle(&gimbal);
+            doSetGimbalAngle(0, uy, ux, false, 1);
             u_k_x = ux;
             u_k_y = uy;
             save_txt();
@@ -286,17 +252,17 @@ public:
 
     }
 
-    void doSetGimbalAngle(ControlGimbal_dji::GimbalContainer *gimbal) {
+    void doSetGimbalAngle(float roll, float pitch, float yaw, bool isAbsolute, int duration) {
         dji_sdk::Gimbal gimbal_angle_data;
         gimbal_angle_data.mode |= 0;
-        gimbal_angle_data.mode |= gimbal->isAbsolute;
-        gimbal_angle_data.mode |= gimbal->yaw_cmd_ignore << 1;
-        gimbal_angle_data.mode |= gimbal->roll_cmd_ignore << 2;
-        gimbal_angle_data.mode |= gimbal->pitch_cmd_ignore << 3;
-        gimbal_angle_data.ts = gimbal->duration;
-        gimbal_angle_data.roll = gimbal->roll;
-        gimbal_angle_data.pitch = gimbal->pitch;
-        gimbal_angle_data.yaw = gimbal->yaw;
+        gimbal_angle_data.mode |= isAbsolute;
+        gimbal_angle_data.mode |= 0 << 1; // yaw_cmd_ignore
+        gimbal_angle_data.mode |= 0 << 2; // roll_cmd_ignore
+        gimbal_angle_data.mode |= 0 << 3; // pitch_cmd_ignore
+        gimbal_angle_data.ts = duration;
+        gimbal_angle_data.roll = roll;
+        gimbal_angle_data.pitch =pitch;
+        gimbal_angle_data.yaw = yaw;
 
         gimbal_angle_cmd_publisher.publish(gimbal_angle_data);
         // Give time for gimbal to sync
