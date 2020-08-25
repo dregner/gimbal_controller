@@ -98,7 +98,7 @@ endforeach(dir)
 #target_link_libraries(inv_kinematic ${catkin_LIBRARIES})
 
 add_executable(gimbal_dji src/gimbal/gimbal_dji.cpp)
-add_dependencies(gimbal_dji dji_sdk_generate_messages_cpp)
+#add_dependencies(gimbal_dji dji_sdk_generate_messages_cpp)
 target_link_libraries(gimbal_dji
                         ${catkin_LIBRARIES}
                         ${DJIOSDK_LIBRARIES})
