@@ -31,8 +31,8 @@
 
 // Be precise here
 ///Parameters of RPA launcher
-int resolution_x = 1200;
-int resolution_y = 800;
+int resolution_x = 1280;
+int resolution_y = 720;
 /// Para resolucao de 800x600
 int central_pixel_x = resolution_x / 2;
 int central_pixel_y = resolution_y / 2;
@@ -64,7 +64,7 @@ float Kc = 0.8, z0 = 0.92;
 /// Leitura dos pixels
 int pixel_x, pixel_y;
 int xmin_, xmin_k = xmin_;
-float yaw_offset = 126;
+float yaw_offset = 0;
 
 
 using namespace std;
@@ -159,6 +159,9 @@ public:
             /// && (abs( pixel_x  - ((int) (msg->bounding_boxes[object_count].xmin-msg->bounding_boxes[object_count].xmax)/2 + (int) msg->bounding_boxes[object_count].xmin)) < 50 || first_time))
             ///object_id == 4 aeroplane || object_id == 32  sport_ball       || object_id == 49 orange              || object_id == 29 frisbee
             if (first_time) {
+                if(pitch < 0.1){
+                    yaw_offset = yaw;
+                }
                 pitch_total = pitch;
                 yaw_total = yaw;
                 first_time = false;
@@ -197,13 +200,13 @@ public:
         pitch_ik = round(pitch_ik);
         double yaw_ik = asin(Yg / (dx * cos(pitch_ik))); //Yg/abs(Yg)*
         yaw_ik = round(yaw_ik);
-        pitch_total = pitch_total * 0.9 + 0.1 * round(pitch + pitch_ik);
-        yaw_total = yaw_total * 0.9 + 0.1 * round(yaw + yaw_ik);
+        pitch_total = pitch_total * 0.9 + 0.1 * round(pitch - pitch_ik);
+        yaw_total = yaw_total * 0.9 + 0.1 * round(yaw - yaw_ik);
         double actual_time = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
         double dt = actual_time - last_control;
 //        cout << "\n" << dt << endl;
         if (dt >= Ts) {
-            doSetGimbalAngle(0,pitch_total, yaw_total, 1);
+            doSetGimbalAngle(0,pitch_total, yaw_total, 10);
             last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
             save_txt();
         }
@@ -267,6 +270,7 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "gimbal_track");
     ControlGimbal_dji control;
     cout << "Init" << endl;
+    control.doSetGimbalAngle(0, 0, 0, 10);
 
     while (ros::ok()) {
         ros::spinOnce();
