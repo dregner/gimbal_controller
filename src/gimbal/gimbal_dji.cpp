@@ -31,8 +31,8 @@
 
 // Be precise here
 ///Parameters of RPA launcher
-int resolution_x = 1200;
-int resolution_y = 800;
+int resolution_x = 1280;
+int resolution_y = 720;
 /// Para resolucao de 800x600
 int central_pixel_x = resolution_x / 2;
 int central_pixel_y = resolution_y / 2;
@@ -64,7 +64,7 @@ float Kc = 0.8, z0 = 0.92;
 /// Leitura dos pixels
 int pixel_x, pixel_y;
 int xmin_, xmin_k = xmin_;
-float yaw_offset = 126;
+float yaw_offset = 108;
 
 
 using namespace std;
@@ -136,7 +136,7 @@ public:
     }
 
 
-    void setGimbalSeed(int speedRoll, int speedPitch, int speedYaw) {
+    void setGimbalSpeed(int speedRoll, int speedPitch, int speedYaw) {
         gimbalSpeed.vector.y = DEG2RAD(speedRoll); //deg
         gimbalSpeed.vector.x = DEG2RAD(speedPitch); //deg
         gimbalSpeed.vector.z = DEG2RAD(speedYaw); //deg
@@ -159,10 +159,10 @@ public:
             /// && (abs( pixel_x  - ((int) (msg->bounding_boxes[object_count].xmin-msg->bounding_boxes[object_count].xmax)/2 + (int) msg->bounding_boxes[object_count].xmin)) < 50 || first_time))
             ///object_id == 4 aeroplane || object_id == 32  sport_ball       || object_id == 49 orange              || object_id == 29 frisbee
             if (first_time) {
-                pitch_total = pitch;
-                yaw_total = yaw;
+                pitch_total = 0;
+                yaw_total = 0;
                 first_time = false;
-                setGimbalSeed(90,90,90);
+                setGimbalSpeed(90,90,90);
                 last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
                 pixel_x = ((int) (msg->bounding_boxes[object_count].xmax - msg->bounding_boxes[object_count].xmin) / 2 +
                            (int) msg->bounding_boxes[object_count].xmin);
@@ -179,6 +179,9 @@ public:
             pixel_x = pixel_x * 0.6 + 0.4 * ((xmax - xmin) / 2 + xmin);
             pixel_y = pixel_y * 0.6 + 0.4 * ((ymax - ymin) / 2 + ymin);
             xmin_k = xmin;
+            cout << central_pixel_x << " x " << central_pixel_y << endl;
+            cout << "\tpx_x: " << pixel_x << "\tpx_y: " << pixel_y << endl;
+
             inverse_kinematic();
 //            control();
 //            }
@@ -190,15 +193,15 @@ public:
     }
 
     void inverse_kinematic() {
-        float Zg = (float) (-pixel_y + central_pixel_y) * GSD; //(px - px)*m/px
-        float Yg = (float) (-pixel_x + central_pixel_x) * GSD; //(px - px)*m/px
+        float Zg = (float) (- pixel_y + central_pixel_y) * GSD; //(px - px)*m/px
+        float Yg = (float) (pixel_x - central_pixel_x) * GSD; //(px - px)*m/px
 
         double pitch_ik = asin(Zg / dx); //Zg/abs(Zg)*
         pitch_ik = round(pitch_ik);
         double yaw_ik = asin(Yg / (dx * cos(pitch_ik))); //Yg/abs(Yg)*
         yaw_ik = round(yaw_ik);
         pitch_total = pitch_total * 0.9 + 0.1 * round(pitch + pitch_ik);
-        yaw_total = yaw_total * 0.9 + 0.1 * round(yaw + yaw_ik);
+        yaw_total = yaw_total * 0.9 + 0.1 * round(yaw - yaw_ik);
         double actual_time = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
         double dt = actual_time - last_control;
 //        cout << "\n" << dt << endl;
@@ -208,9 +211,10 @@ public:
             save_txt();
         }
 //        cout << "XYZ Gimbal Inverse Kinematic" << endl;
-//        cout << "\tYg: " << Yg << "\tZg: " << Zg << endl;
+
         cout << "Inverse Kinematic Control:" << endl;
-        cout << "\tpx_x: " << pixel_x << "\tpx_y: " <<pixel_y << endl;
+                cout << "\tYg: " << Yg << "\tZg: " << Zg << endl;
+        cout << "\tpx_x: " << pixel_x << "\tpx_y: " << pixel_y << endl;
         cout << "\tyaw ik: " << yaw_ik << "\tyaw desired: " << yaw_total << endl;
         cout << "\tpitch ik: " << pitch_ik << "\tpitch desired: " << pitch_total << endl;
 

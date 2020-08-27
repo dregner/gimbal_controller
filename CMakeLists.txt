@@ -110,6 +110,12 @@ target_link_libraries(read_bb ${catkin_LIBRARIES})
 
 ######### READ/WRITE DJI GIMBAL #################
 
+add_executable(read_image src/gimbal/read_image.cpp)
+target_link_libraries(read_image
+        ${catkin_LIBRARIES}
+        ${DJIOSDK_LIBRARIES})
+
+
 add_executable(read_gimbal src/gimbal/read_gimbal.cpp)
 target_link_libraries(read_gimbal
         ${catkin_LIBRARIES}
