@@ -156,7 +156,6 @@ public:
 
 //        cout << "Obj: " << object_id << endl;
         if ((object_id == 41)) {
-            /// && (abs( pixel_x  - ((int) (msg->bounding_boxes[object_count].xmin-msg->bounding_boxes[object_count].xmax)/2 + (int) msg->bounding_boxes[object_count].xmin)) < 50 || first_time))
             ///object_id == 4 aeroplane || object_id == 32  sport_ball       || object_id == 49 orange              || object_id == 29 frisbee
             if (first_time) {
                 if(pitch < 0.1){
@@ -251,7 +250,7 @@ public:
 
     void doSetGimbalAngle(float roll, float pitch, float yaw, int duration) {
         dji_sdk::Gimbal gimbal_angle_data;
-        gimbal_angle_data.mode |= 1 << 0;
+        gimbal_angle_data.mode |= 1 << 0; // 1 - absolute, 0 - incremental
         gimbal_angle_data.mode |= 0 << 1; // yaw_cmd_ignore
         gimbal_angle_data.mode |= 0 << 2; // roll_cmd_ignore
         gimbal_angle_data.mode |= 0 << 3; // pitch_cmd_ignore
@@ -269,8 +268,10 @@ int main(int argc, char **argv) {
 
     ros::init(argc, argv, "gimbal_track");
     ControlGimbal_dji control;
-    cout << "Init" << endl;
+    cout << "Initialize Control" << endl;
     control.doSetGimbalAngle(0, 0, 0, 10);
+    ros::spinOnce();
+    cout << "Init angle: " << RAD2DEG(roll) << ", " << RAD2DEG(pitch) << ", " << RAD2DEG(yaw) << endl;
 
     while (ros::ok()) {
         ros::spinOnce();
