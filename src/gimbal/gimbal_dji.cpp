@@ -64,7 +64,7 @@ float Kc = 0.8, z0 = 0.92;
 /// Leitura dos pixels
 int pixel_x, pixel_y;
 int xmin_, xmin_k = xmin_;
-float yaw_offset = 108;
+float yaw_offset = 0;
 
 
 using namespace std;
@@ -159,8 +159,11 @@ public:
             /// && (abs( pixel_x  - ((int) (msg->bounding_boxes[object_count].xmin-msg->bounding_boxes[object_count].xmax)/2 + (int) msg->bounding_boxes[object_count].xmin)) < 50 || first_time))
             ///object_id == 4 aeroplane || object_id == 32  sport_ball       || object_id == 49 orange              || object_id == 29 frisbee
             if (first_time) {
-                pitch_total = 0;
-                yaw_total = 0;
+                if(pitch < 0.1){
+                    yaw_offset = yaw;
+                }
+                pitch_total = pitch;
+                yaw_total = yaw;
                 first_time = false;
                 setGimbalSpeed(90,90,90);
                 last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
@@ -193,25 +196,25 @@ public:
     }
 
     void inverse_kinematic() {
-        float Zg = (float) (- pixel_y + central_pixel_y) * GSD; //(px - px)*m/px
-        float Yg = (float) (pixel_x - central_pixel_x) * GSD; //(px - px)*m/px
+        float Zg = (float) (-pixel_y + central_pixel_y) * GSD; //(px - px)*m/px
+        float Yg = (float) (-pixel_x + central_pixel_x) * GSD; //(px - px)*m/px
 
         double pitch_ik = asin(Zg / dx); //Zg/abs(Zg)*
         pitch_ik = round(pitch_ik);
         double yaw_ik = asin(Yg / (dx * cos(pitch_ik))); //Yg/abs(Yg)*
         yaw_ik = round(yaw_ik);
-        pitch_total = pitch_total * 0.9 + 0.1 * round(pitch + pitch_ik);
+        pitch_total = pitch_total * 0.9 + 0.1 * round(pitch - pitch_ik);
         yaw_total = yaw_total * 0.9 + 0.1 * round(yaw - yaw_ik);
         double actual_time = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
         double dt = actual_time - last_control;
 //        cout << "\n" << dt << endl;
         if (dt >= Ts) {
-            doSetGimbalAngle(0,pitch_total, yaw_total, 1);
+            doSetGimbalAngle(0,pitch_total, yaw_total, 10);
             last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
             save_txt();
         }
 //        cout << "XYZ Gimbal Inverse Kinematic" << endl;
-
+//        cout << "\tYg: " << Yg << "\tZg: " << Zg << endl;
         cout << "Inverse Kinematic Control:" << endl;
                 cout << "\tYg: " << Yg << "\tZg: " << Zg << endl;
         cout << "\tpx_x: " << pixel_x << "\tpx_y: " << pixel_y << endl;
@@ -252,7 +255,7 @@ public:
 
     void doSetGimbalAngle(float roll, float pitch, float yaw, int duration) {
         dji_sdk::Gimbal gimbal_angle_data;
-        gimbal_angle_data.mode |= 1 << 0;
+        gimbal_angle_data.mode |= 1 << 0; // 1 - absolute, 0 - incremental
         gimbal_angle_data.mode |= 0 << 1; // yaw_cmd_ignore
         gimbal_angle_data.mode |= 0 << 2; // roll_cmd_ignore
         gimbal_angle_data.mode |= 0 << 3; // pitch_cmd_ignore
@@ -270,7 +273,10 @@ int main(int argc, char **argv) {
 
     ros::init(argc, argv, "gimbal_track");
     ControlGimbal_dji control;
-    cout << "Init" << endl;
+    cout << "Initialize Control" << endl;
+    control.doSetGimbalAngle(0, 0, 0, 10);
+    ros::spinOnce();
+    cout << "Init angle: " << RAD2DEG(roll) << ", " << RAD2DEG(pitch) << ", " << RAD2DEG(yaw) << endl;
 
     while (ros::ok()) {
         ros::spinOnce();
