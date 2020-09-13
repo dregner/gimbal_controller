@@ -169,7 +169,7 @@ public:
             pixel_x = pixel_x * 0.6 + 0.4 * ((xmax - xmin) / 2 + xmin);
             pixel_y = pixel_y * 0.6 + 0.4 * ((ymax - ymin) / 2 + ymin);
 
-            if ((abs(pixel_x - pixel_x_k) < 100) && (abs(pixel_y - pixel_y_k) < 100)) {
+            if ((abs(pixel_x - pixel_x_k) < 1000) && (abs(pixel_y - pixel_y_k) < 1000)) {
                 pixel_x_k = pixel_x;
                 pixel_y_k = pixel_y;
                 print();
@@ -213,13 +213,15 @@ public:
 
 
     void inverse_kinematic() {
-        double Zg = (float) (pixel_y - central_pixel_y) * GSD; //(px - px)*m/px
-        double Yg = (float) (-pixel_x + central_pixel_x) * GSD; //(px - px)*m/px
+        double Zg = (float) (- pixel_y + central_pixel_y) * GSD; //(px - px)*m/px
+        double Yg = (float) (- pixel_x + central_pixel_x) * GSD; //(px - px)*m/px
 
-        pitch_ik = asin(Zg / dx); //Zg/abs(Zg)*
-        pitch_ik = round(pitch_ik);
-        yaw_ik = asin(Yg / (dx * cos(pitch_ik))); //Yg/abs(Yg)*
+        yaw_ik = asin(Yg / dx); //Yg/abs(Yg)*
         yaw_ik = round(yaw_ik);
+
+        pitch_ik = asin(-Zg /(dx * cos(yaw_ik))); //Zg/abs(Zg)*
+        pitch_ik = round(pitch_ik);
+
         pitch_total = pitch_total * 0.9 + 0.1 * round(pitch + pitch_ik);
         yaw_total = yaw_total * 0.9 + 0.1 * round(yaw + yaw_ik);
         double dt = (ros::Time::now().nsec * 1e-9 + ros::Time::now().sec) - last_control;
