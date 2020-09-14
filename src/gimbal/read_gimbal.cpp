@@ -10,6 +10,7 @@
 #include <fstream>
 
 #define RAD2DEG(RAD) ((RAD) * (180.0) / (M_PI))
+#define DEG2RAD(DEG) ((DEG) * (M_PI) / (180.0))
 
 
 uint8_t mode;
@@ -18,9 +19,10 @@ using namespace std;
 static std::ofstream gimbal_angles;
 int init_time;
 void print() {
-
-    cout << "Time: " << init_time - ros::Time::now().sec << " seconds" << endl;
-    cout << "Roll: " << roll << "\tPitch: " << pitch << "\tYaw: " << yaw << endl;
+	int current_time = ros::Time::now().sec - init_time;
+    cout << "Time: " << current_time << " seconds" << endl;
+    cout << "Roll: " << roll << "\tPitch: " << pitch << "\tYaw: " << yaw << " deg" << endl;
+    cout << "Roll: " << DEG2RAD(roll) << "\tPitch: " << DEG2RAD(pitch) << "\tYaw: " << DEG2RAD(yaw) << " rad" << endl;
     cout << "\033[2J\033[1;1H";     // clear terminal
 
 }
