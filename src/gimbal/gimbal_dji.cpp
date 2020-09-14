@@ -199,12 +199,13 @@ public:
         float Zg = (float) (-pixel_y + central_pixel_y) * GSD; //(px - px)*m/px
         float Yg = (float) (-pixel_x + central_pixel_x) * GSD; //(px - px)*m/px
 
-        double pitch_ik = asin(Zg / dx); //Zg/abs(Zg)*
-        pitch_ik = round(pitch_ik);
-        double yaw_ik = asin(Yg / (dx * cos(pitch_ik))); //Yg/abs(Yg)*
+        double yaw_ik = asin(- Yg / dx ); // Yg = -cos(yaw_ik)*cos(pitch_ik)*dx
         yaw_ik = round(yaw_ik);
-        pitch_total = pitch_total * 0.9 + 0.1 * round(pitch - pitch_ik);
-        yaw_total = yaw_total * 0.9 + 0.1 * round(yaw - yaw_ik);
+        double pitch_ik = asin(Zg / (dx* cos(yaw_ik))); //Zg = sin(pitch_ik)*dx
+        pitch_ik = round(pitch_ik);
+
+        pitch_total = pitch_total * 0.9 + 0.1 * round(pitch + pitch_ik);
+        yaw_total = yaw_total * 0.9 + 0.1 * round(yaw + yaw_ik);
         double actual_time = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
         double dt = actual_time - last_control;
 //        cout << "\n" << dt << endl;
