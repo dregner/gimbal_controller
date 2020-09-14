@@ -58,13 +58,13 @@ double last_control;
 double uy = 0, ux = 0;
 double u_k_x = 0, u_k_y = 0;
 double er_k_x = 0, er_k_y = 0;
-float Kc = 0.8, z0 = 0.92;
+float Kc = 0.08, z0 = 0.92;
 
 
 /// Leitura dos pixels
 int pixel_x, pixel_y;
 int xmin_, xmin_k = xmin_;
-float yaw_offset = 0;
+float yaw_offset = -75.4; //-76.2;
 
 
 using namespace std;
@@ -155,9 +155,12 @@ public:
         object_id = msg->bounding_boxes[object_count].id;
 
 //        cout << "Obj: " << object_id << endl;
-        if ((object_id == 41)) {
-            /// && (abs( pixel_x  - ((int) (msg->bounding_boxes[object_count].xmin-msg->bounding_boxes[object_count].xmax)/2 + (int) msg->bounding_boxes[object_count].xmin)) < 50 || first_time))
-            ///object_id == 4 aeroplane || object_id == 32  sport_ball       || object_id == 49 orange              || object_id == 29 frisbee
+        if ((object_id == 39)) {
+	// object_id == 4 aeroplane
+	// object_id == 56 chair
+	// object_id == 67  cell_phone       
+	// object_id == 0 person  
+	// object_id == 66 keyboard                          
             if (first_time) {
                 if(pitch < 0.1){
                     yaw_offset = yaw;
@@ -166,6 +169,8 @@ public:
                 yaw_total = yaw;
                 first_time = false;
                 setGimbalSpeed(90,90,90);
+                u_k_x = yaw;
+                u_k_y = pitch;
                 last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
                 pixel_x = ((int) (msg->bounding_boxes[object_count].xmax - msg->bounding_boxes[object_count].xmin) / 2 +
                            (int) msg->bounding_boxes[object_count].xmin);
@@ -185,8 +190,8 @@ public:
             cout << central_pixel_x << " x " << central_pixel_y << endl;
             cout << "\tpx_x: " << pixel_x << "\tpx_y: " << pixel_y << endl;
 
-            inverse_kinematic();
-//            control();
+//            inverse_kinematic();
+            control();
 //            }
         } else {
             object_count++;
@@ -199,9 +204,9 @@ public:
         float Zg = (float) (-pixel_y + central_pixel_y) * GSD; //(px - px)*m/px
         float Yg = (float) (-pixel_x + central_pixel_x) * GSD; //(px - px)*m/px
 
-        double yaw_ik = asin(- Yg / dx ); // Yg = -cos(yaw_ik)*cos(pitch_ik)*dx
+        double yaw_ik = asin(- Yg / dx ); // Yg = -sin(yaw_ik)*dx 
         yaw_ik = round(yaw_ik);
-        double pitch_ik = asin(Zg / (dx* cos(yaw_ik))); //Zg = sin(pitch_ik)*dx
+        double pitch_ik = asin(Zg / (dx* cos(yaw_ik))); //Zg = cos(yaw_ik)*sen(pitch_ik)*dx
         pitch_ik = round(pitch_ik);
 
         pitch_total = pitch_total * 0.9 + 0.1 * round(pitch + pitch_ik);
@@ -219,6 +224,8 @@ public:
         cout << "Inverse Kinematic Control:" << endl;
                 cout << "\tYg: " << Yg << "\tZg: " << Zg << endl;
         cout << "\tpx_x: " << pixel_x << "\tpx_y: " << pixel_y << endl;
+	cout << "\tsp_x: " << central_pixel_x << "\tsp_y: " << central_pixel_y << endl;
+	cout << "\ter_x: " << Yg/GSD << "\ter_y: " << Zg/GSD << endl;
         cout << "\tyaw ik: " << yaw_ik << "\tyaw desired: " << yaw_total << endl;
         cout << "\tpitch ik: " << pitch_ik << "\tpitch desired: " << pitch_total << endl;
 
@@ -233,12 +240,12 @@ public:
             if (abs(er_x) > central_pixel_x * GSD) {
                 ux = u_k_x;
             } else {
-                ux = (Kc * (er_x - z0 * er_k_x) + u_k_x);
+                ux = (-Kc * (er_x - z0 * er_k_x) + u_k_x);
             }
             if (abs(er_y) > central_pixel_y * GSD) {
                 uy = u_k_y;
             } else {
-                uy = (-Kc * (er_y - z0 * er_k_y) + u_k_y);
+                uy = (Kc * (er_y - z0 * er_k_y) + u_k_y);
             }
             doSetGimbalAngle(0, uy, ux, 1);
             u_k_x = ux;

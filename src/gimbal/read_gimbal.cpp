@@ -30,7 +30,7 @@ void print() {
 void gimbalAngleCallBack(const geometry_msgs::Vector3Stamped::ConstPtr &msg) {
     roll = msg->vector.y;
     pitch = msg->vector.x;
-    yaw = 111.6 - msg->vector.z;
+    yaw = -76.3 - msg->vector.z;
 
     print();
     if(gimbal_angles.is_open()){
