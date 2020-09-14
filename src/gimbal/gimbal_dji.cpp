@@ -38,7 +38,7 @@ int central_pixel_x = resolution_x / 2;
 int central_pixel_y = resolution_y / 2;
 /// DX object
 double dx = 1;
-float GSD = 0.01;
+float GSD = 0.000208;
 
 /// Position variables
 float roll, pitch, yaw;
@@ -148,13 +148,12 @@ public:
         roll = DEG2RAD(gimbal_angle.vector.y);
         pitch = DEG2RAD(gimbal_angle.vector.x);
         yaw = DEG2RAD(yaw_offset - gimbal_angle.vector.z);
-//        cout << "roll: " << roll << "\tPitch: " << pitch << "\tYaw: " << yaw << endl;
     }
 
     void ReadBb(const darknet_ros_msgs::BoundingBoxes::ConstPtr &msg) {
         object_id = msg->bounding_boxes[object_count].id;
 
-//        cout << "Obj: " << object_id << endl;
+
         if ((object_id == 39)) {
 	// object_id == 4 aeroplane
 	// object_id == 56 chair
@@ -179,7 +178,6 @@ public:
                 xmin_k = msg->bounding_boxes[object_count].xmin;
             }
 
-//            if (abs(msg->bounding_boxes[object_count].xmin - xmin_k) < 100) {
             int xmin = msg->bounding_boxes[object_count].xmin;
             int xmax = msg->bounding_boxes[object_count].xmax;
             int ymin = msg->bounding_boxes[object_count].ymin;
@@ -190,9 +188,9 @@ public:
             cout << central_pixel_x << " x " << central_pixel_y << endl;
             cout << "\tpx_x: " << pixel_x << "\tpx_y: " << pixel_y << endl;
 
-//            inverse_kinematic();
-            control();
-//            }
+            inverse_kinematic();
+//            control();
+
         } else {
             object_count++;
             if (object_count > object_founded) { object_count = 0; }
@@ -215,8 +213,10 @@ public:
         double dt = actual_time - last_control;
 //        cout << "\n" << dt << endl;
         if (dt >= Ts) {
-            doSetGimbalAngle(0,pitch_total, yaw_total, 10);
-            last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
+            doSetGimbalAngle(0,pitch_total, yaw_total, 1);
+            last_control = (ros::Time::now().nsec * 1e-9 + ros::Time::now().sec);
+		cout << "Controlling" << endl;
+		cout << "\033[2J\033[1;1H";     // clear terminal
             save_txt();
         }
 //        cout << "XYZ Gimbal Inverse Kinematic" << endl;
