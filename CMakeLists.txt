@@ -85,6 +85,8 @@ catkin_package(
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 
+set(CMAKE_CXX_TARGET_INCLUDE_PATH
+        "/usr/include/ignition/math2")
 
 
 foreach(dir launch models urdf worlds config)
@@ -97,11 +99,21 @@ endforeach(dir)
 #add_executable(inv_kinematic src/gimbal/inverse_kinematic.cpp)
 #target_link_libraries(inv_kinematic ${catkin_LIBRARIES})
 
-add_executable(gimbal_dji src/gimbal/gimbal_dji.cpp)
+add_executable(gimbal_dji src/gimbal/gimbal_track_control.cpp)
 #add_dependencies(gimbal_dji dji_sdk_generate_messages_cpp)
 target_link_libraries(gimbal_dji
                         ${catkin_LIBRARIES}
                         ${DJIOSDK_LIBRARIES})
+
+add_executable(gimbal_dji_imu src/gimbal/gimbal_track_control_imu.cpp)
+target_link_libraries(gimbal_dji_imu
+                        ${catkin_LIBRARIES}
+                        ${DJIOSDK_LIBRARIES})
+
+add_executable(control_imu src/gimbal/gimbal_imu_control.cpp)
+target_link_libraries(control_imu
+        ${catkin_LIBRARIES}
+        ${DJIOSDK_LIBRARIES})
 
 ######### READ BOUNDING BOXES DARKNET ##################
 
@@ -125,3 +137,9 @@ add_executable(write_gimbal src/gimbal/write_gimbal_angle.cpp)
 target_link_libraries(write_gimbal
         ${catkin_LIBRARIES}
         ${DJIOSDK_LIBRARIES})
+
+add_executable(read_attitude src/sensors/read_attitude.cpp)
+target_link_libraries(read_attitude ${catkin_LIBRARIES})
+
+add_executable(read_imu src/sensors/read_imu.cpp)
+target_link_libraries(read_imu ${catkin_LIBRARIES})
