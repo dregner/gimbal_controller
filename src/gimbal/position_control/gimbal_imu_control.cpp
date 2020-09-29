@@ -109,9 +109,8 @@ public:
             u_yaw = (Kc * (er_yaw - z0 * er_k_yaw) + u_k_yaw);
 
             doSetGimbalAngle(0, u_pitch, u_yaw, 1);
-            u_k_x = ux;
-            u_k_y = uy;
-            save_txt();
+            u_k_pitch = u_pitch;
+            u_k_yaw = u_yaw;
             last_control = (ros::Time::now().nsec * 1e-9 + ros::Time::now().sec);
         }
         er_k_yaw = er_yaw;

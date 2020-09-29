@@ -99,18 +99,31 @@ endforeach(dir)
 #add_executable(inv_kinematic src/gimbal/inverse_kinematic.cpp)
 #target_link_libraries(inv_kinematic ${catkin_LIBRARIES})
 
-add_executable(gimbal_dji src/gimbal/gimbal_track_control.cpp)
+add_executable(dji_ik_control src/gimbal/track_control/ik_track_control.cpp)
 #add_dependencies(gimbal_dji dji_sdk_generate_messages_cpp)
-target_link_libraries(gimbal_dji
+target_link_libraries(dji_ik_control
                         ${catkin_LIBRARIES}
                         ${DJIOSDK_LIBRARIES})
 
-add_executable(gimbal_dji_imu src/gimbal/gimbal_track_control_imu.cpp)
-target_link_libraries(gimbal_dji_imu
+add_executable(dji_pid_control src/gimbal/track_control/pid_track_control.cpp)
+#add_dependencies(gimbal_dji dji_sdk_generate_messages_cpp)
+target_link_libraries(dji_pid_control
+        ${catkin_LIBRARIES}
+        ${DJIOSDK_LIBRARIES})
+
+add_executable(dji_pid_imu_control src/gimbal/track_control/pid_track_control_imu.cpp)
+target_link_libraries(dji_pid_imu_control
                         ${catkin_LIBRARIES}
                         ${DJIOSDK_LIBRARIES})
 
-add_executable(control_imu src/gimbal/gimbal_imu_control.cpp)
+
+
+add_executable(dji_ik_imu_control src/gimbal/track_control/ik_track_control_imu.cpp)
+target_link_libraries(dji_ik_imu_control
+        ${catkin_LIBRARIES}
+        ${DJIOSDK_LIBRARIES})
+
+add_executable(control_imu src/gimbal/position_control/gimbal_imu_control.cpp)
 target_link_libraries(control_imu
         ${catkin_LIBRARIES}
         ${DJIOSDK_LIBRARIES})
