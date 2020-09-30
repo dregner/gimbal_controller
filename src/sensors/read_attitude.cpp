@@ -1,7 +1,7 @@
 //
 // Created by vant3d on 14/09/2020.
 //
-#include <geometry_msgs/Quaternion.h>
+#include <geometry_msgs/QuaternionStamped.h>
 #include <ros/ros.h>
 #include <ignition/math2/ignition/math/Pose3.hh>
 
@@ -10,9 +10,9 @@
 
 using namespace std;
 
-void callback(const geometry_msgs::Quaternion::ConstPtr &msg){
+void callback(const geometry_msgs::QuaternionStamped::ConstPtr &msg){
     ignition::math::Quaterniond rpy;
-    rpy.Set(msg->w, msg->x, msg->y, msg->z);
+    rpy.Set(msg->quaternion.w, msg->quaternion.x, msg->quaternion.y, msg->quaternion.z);
 
     cout << "R: " << RAD2DEG(rpy.Roll()) << endl;
     cout << "P: " << RAD2DEG(rpy.Pitch()) << endl;
@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 
     ros::NodeHandle nh;
 
-    ros::Subscriber sub_imu = nh.subscribe("/dji_sdk/imu", 1000l, callback);
+    ros::Subscriber sub_imu = nh.subscribe("/dji_sdk/attitude", 1000l, callback);
 
     ros::spin();
     return 0;
