@@ -156,3 +156,6 @@ target_link_libraries(read_attitude ${catkin_LIBRARIES})
 
 add_executable(read_imu src/sensors/read_imu.cpp)
 target_link_libraries(read_imu ${catkin_LIBRARIES})
+
+add_executable(read_imu_gimbal src/sensors/read_gimbal_imu.cpp)
+target_link_libraries(read_imu_gimbal ${catkin_LIBRARIES})

@@ -159,6 +159,9 @@ int main(int argc, char **argv) {
     Gimbal_control_imu control;
     cout << "Initialize Control" << endl;
     control.doSetGimbalAngle(0, 0, 0, 10);
+    control.setGimbalSpeed(90, 90, 90);
+    cout << "Setting angle and seepd" << endl;
+    sleep(2);
     ros::spinOnce();
     cout << "Init angle: " << RAD2DEG(roll) << ", " << RAD2DEG(pitch) << ", " << RAD2DEG(yaw) << endl;
 
