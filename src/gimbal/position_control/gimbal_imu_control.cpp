@@ -1,6 +1,8 @@
-//
-// Created by vant3d on 14/06/2020.
-//
+/*
+ * This algorithm presents a control to reject RPA movements over gimbal
+ * structure and maintain stable, rejecting disturbances and keep focused on a specify point of view
+ */
+
 // System includes
 #include "unistd.h"
 //#include <cstdint>
@@ -29,12 +31,17 @@
 
 /// Position variables
 float roll, pitch, yaw;
+float rpa_roll, rpa_pitch, rpa_yaw;
 
 /// Control
 bool first_time = false;
-int Ts = 0.5;
+int Ts = 0.2;
 float last_control;
 
+
+/// Angle reference
+float ref_yaw = 0;
+float ref_pitch = 0;
 /// PID CONTROLLER
 double u_yaw = 0, u_pitch = 0;
 double u_k_pitch = 0, u_k_yaw = 0;
@@ -74,6 +81,7 @@ public:
                 ("dji_sdk/gimbal_angle_cmd", 10);
         gimbal_speed_cmd_publisher = nh.advertise<geometry_msgs::Vector3Stamped>
                 ("dji_sdk/gimbal_speed_cmd", 10);
+        sdk_imu_subscriber = nh.subscribe<sensor_msgs::Imu>("dji_sdk/imu", 10, &Gimbal_control_imu::read_imu, this);
 
     }
 
@@ -87,11 +95,19 @@ public:
         gimbal_speed_cmd_publisher.publish(gimbalSpeed);
     }
 
+    void read_imu(const sensor_msgs::Imu::ConstPtr &msg){
+        ignition::math::Quaterniond rpa_rpy;
+        rpa_rpy.Set(msg->orientation.w, msg->orientation.x, msg->orientation.y, msg->orientation.z);
+        rpa_roll = RAD2DEG(rpa_rpy.Roll());
+        rpa_pitch = RAD2DEG(rpa_rpy.Pitch());
+        rpa_yaw = RAD2DEG(rpa_rpy.Yaw());
+    }
+
     void gimbalAngleCallback(const geometry_msgs::Vector3Stamped::ConstPtr &msg) {
         gimbal_angle = *msg;
         roll = DEG2RAD(gimbal_angle.vector.y);
         pitch = DEG2RAD(gimbal_angle.vector.x);
-        yaw = DEG2RAD(gimbal_angle.vector.z);
+        yaw = DEG2RAD( gimbal_angle.vector.z);
         if (first_time) {
             setGimbalSpeed(90, 90, 90);
             sleep(2);
@@ -102,6 +118,9 @@ public:
 
 
     void control() {
+        er_pitch = ref_pitch - pitch;
+        er_yaw = ref_yaw - yaw;
+
         double actual_time = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
         double dt = actual_time - last_control;
         if (dt >= Ts) {
