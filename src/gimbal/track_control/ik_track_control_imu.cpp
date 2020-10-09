@@ -142,7 +142,7 @@ public:
     void setGimbalSpeed(int speedRoll, int speedPitch, int speedYaw) {
         gimbalSpeed.vector.y = DEG2RAD(speedRoll); //deg
         gimbalSpeed.vector.x = DEG2RAD(speedPitch); //deg
-        gimbalSpeed.vector.z = DEG2RAD(speedYaw); //deg
+        gimbalSpeed.vector.z = yaw_offset - DEG2RAD(speedYaw); //deg
         gimbal_speed_cmd_publisher.publish(gimbalSpeed);
     }
 
@@ -150,19 +150,17 @@ public:
         gimbal_angle = *msg;
         roll = DEG2RAD(gimbal_angle.vector.y);
         pitch = DEG2RAD(gimbal_angle.vector.x);
-        yaw = DEG2RAD(yaw_offset - gimbal_angle.vector.z);
+        yaw = DEG2RAD(-yaw_offset + gimbal_angle.vector.z);
     }
 
     void ReadBb(const darknet_ros_msgs::BoundingBoxes::ConstPtr &msg) {
         object_id = msg->bounding_boxes[object_count].id;
 
 
-        if ((object_id == 39)) {
+        if ((object_id == 32)) {
             // 4 aeroplane; 56 chair; 67  cell_phone; 0 person; 66 keyboard
 
             if (first_time) {
-                pitch_total = pitch;
-                yaw_total = yaw;
                 first_time = false;
                 last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
                 pixel_x = ((int) (msg->bounding_boxes[object_count].xmax - msg->bounding_boxes[object_count].xmin) / 2 +
@@ -198,20 +196,18 @@ public:
         double pitch_ik = asin(Zg / (dx * cos(yaw_ik))); //Zg = cos(yaw_ik)*sen(pitch_ik)*dx
         pitch_ik = round(pitch_ik);
 
-        pitch_total = pitch_total * 0.9 + 0.1 * round(pitch + pitch_ik);
-        yaw_total = yaw_total * 0.9 + 0.1 * round(yaw + yaw_ik);
+        pitch_total = pitch + pitch_ik;
+        yaw_total = yaw + yaw_ik;
         double actual_time = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
         double dt = actual_time - last_control;
 //        cout << "\n" << dt << endl;
         if (dt >= Ts) {
-            doSetGimbalAngle(0, pitch_total, yaw_total, 1);
+            doSetGimbalAngle(0, pitch_ik, yaw_ik, 1,0);
             last_control = (ros::Time::now().nsec * 1e-9 + ros::Time::now().sec);
             cout << "Controlling" << endl;
             cout << "\033[2J\033[1;1H";     // clear terminal
             save_txt();
         }
-//        cout << "XYZ Gimbal Inverse Kinematic" << endl;
-//        cout << "\tYg: " << Yg << "\tZg: " << Zg << endl;
         cout << "Inverse Kinematic Control:" << endl;
         cout << "\tYg: " << Yg << "\tZg: " << Zg << endl;
         cout << "\tpx_x: " << pixel_x << "\tpx_y: " << pixel_y << endl;
@@ -223,9 +219,9 @@ public:
     }
 
 
-    void doSetGimbalAngle(float roll, float pitch, float yaw, int duration) {
+    void doSetGimbalAngle(float roll, float pitch, float yaw, int duration, bool mode) {
         dji_sdk::Gimbal gimbal_angle_data;
-        gimbal_angle_data.mode |= 1 << 0; // 1 - absolute, 0 - incremental
+        gimbal_angle_data.mode |= mode << 0; // 1 - absolute, 0 - incremental
         gimbal_angle_data.mode |= 0 << 1; // yaw_cmd_ignore
         gimbal_angle_data.mode |= 0 << 2; // roll_cmd_ignore
         gimbal_angle_data.mode |= 0 << 3; // pitch_cmd_ignore
@@ -244,7 +240,7 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "gimbal_track");
     ControlGimbal_dji control;
     cout << "Initialize Control" << endl;
-    control.doSetGimbalAngle(0, 0, 0, 10);
+    control.doSetGimbalAngle(0, 0, 0, 1,1);
     control.setGimbalSpeed(90, 90, 90);
     cout << "Waiting to def speed 90 deg/sec" << endl;
     sleep(2);

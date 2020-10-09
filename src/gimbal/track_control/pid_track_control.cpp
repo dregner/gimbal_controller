@@ -49,19 +49,20 @@ int object_founded, object_count, object_id;
 bool first_time = false;
 int Ts = 0.05;
 double last_control;
+int start;
 
 
 /// PID CONTROLLER
 double uy = 0, ux = 0;
 double u_k_x = 0, u_k_y = 0;
 double er_k_x = 0, er_k_y = 0;
-float Kc = 0.08, z0 = 0.92;
+float Kc = 3, z0 = 0.92;
 
 
 /// Leitura dos pixels
 int pixel_x, pixel_y;
 int xmin_, xmin_k = xmin_;
-float yaw_offset = -75.4; //-76.2;
+float yaw_offset = 26.6;
 
 
 using namespace std;
@@ -115,7 +116,8 @@ public:
 
     void save_txt() {
         if (control_pid.is_open()) {
-            control_pid << ros::Time::now().nsec * 1e-9 + ros::Time::now().sec << "\t" << pitch << "\t" << yaw
+	    float  time_now = (ros::Time::now().nsec * 1e-9 + ros::Time::now().sec) - start;
+            control_pid << time_now << "\t" << pitch << "\t" << yaw
                         << "\t" << u_k_x << "\t" << u_k_y << "\t"
                         << central_pixel_x - pixel_x << "\t"
                         << central_pixel_y - pixel_y << "\t" << pixel_x << "\t" << pixel_y << "\n";
@@ -141,8 +143,8 @@ public:
         object_id = msg->bounding_boxes[object_count].id;
 
 
-        if ((object_id == 39)) {
-            // 4 aeroplane; 56 chair; 67  cell_phone; 0 person; 66 keyboard
+        if ((object_id == 56)) {
+            // 4 aeroplane;32 sportball; 41 cup; 56 chair; 67  cell_phone; 0 person; 66 keyboard
             if (first_time) {
                 first_time = false;
                 u_k_x = yaw;
@@ -225,10 +227,11 @@ int main(int argc, char **argv) {
     ControlGimbal_dji control;
     cout << "Initialize Control" << endl;
     control.doSetGimbalAngle(0, 0, 0, 10);
-    control.setGimbalSpeed(90,90,90);
+    control.setGimbalSpeed(900,900,900);
     cout << "Waiting to def speed 90 deg/sec" << endl;
     sleep(2);
     cout << "Done" << endl;
+    start = ros::Time::now().sec;
     ros::spinOnce();
     cout << "Yaw offset: " << yaw_offset << endl;
     cout << "Init angle: " << RAD2DEG(roll) << ", " << RAD2DEG(pitch) << ", " << RAD2DEG(yaw) << endl;

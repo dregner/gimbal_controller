@@ -52,12 +52,12 @@ int Ts = 0.05;
 /// Inverse Kinematic CONTROLLER
 float pitch_total, yaw_total;
 double last_control;
-
+int start;
 
 /// Leitura dos pixels
 int pixel_x, pixel_y;
 int xmin_, xmin_k = xmin_;
-float yaw_offset = 0;
+float yaw_offset = 108.9;
 
 
 using namespace std;
@@ -110,7 +110,8 @@ public:
 
     void save_txt() {
         if (inv_kinematic.is_open()) {
-            inv_kinematic << ros::Time::now().nsec * 1e-9 + ros::Time::now().sec << "\t" << pitch << "\t" << yaw
+	    float  time_now = (ros::Time::now().nsec * 1e-9 + ros::Time::now().sec) - start;
+            inv_kinematic << time_now << "\t" << pitch << "\t" << yaw
                           << "\t" << pitch_total << "\t"
                           << yaw_total << "\t"
                           << pixel_x << "\t" << pixel_y << "\t" << central_pixel_x - pixel_x << "\t"
@@ -138,11 +139,9 @@ public:
         object_id = msg->bounding_boxes[object_count].id;
 
 
-        if ((object_id == 39)) {
+        if ((object_id == 56)) {
             // 4 aeroplane; 56 chair; 67  cell_phone; 0 person; 66 keyboard
             if (first_time) {
-                pitch_total = pitch;
-                yaw_total = yaw;
                 first_time = false;
                 last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
                 pixel_x = ((int) (msg->bounding_boxes[object_count].xmax - msg->bounding_boxes[object_count].xmin) / 2 +
@@ -176,22 +175,22 @@ public:
         double yaw_ik = asin(-Yg / dx); // Yg = -sin(yaw_ik)*dx
         yaw_ik = round(yaw_ik);
         double pitch_ik = asin(Zg / (dx * cos(yaw_ik))); //Zg = cos(yaw_ik)*sen(pitch_ik)*dx
+
         pitch_ik = round(pitch_ik);
 
-        pitch_total = pitch_total * 0.9 + 0.1 * round(pitch + pitch_ik);
-        yaw_total = yaw_total * 0.9 + 0.1 * round(yaw + yaw_ik);
+        //pitch_total = pitch + pitch_ik;
+        //yaw_total = yaw + yaw_ik;
         double actual_time = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
         double dt = actual_time - last_control;
 //        cout << "\n" << dt << endl;
         if (dt >= Ts) {
-            doSetGimbalAngle(0, pitch_total, yaw_total, 1);
+            doSetGimbalAngle(0, pitch_ik, yaw_ik, 1,0);
             last_control = (ros::Time::now().nsec * 1e-9 + ros::Time::now().sec);
-            cout << "Controlling" << endl;
-            cout << "\033[2J\033[1;1H";     // clear terminal
             save_txt();
+	    pitch_total = pitch_ik+pitch;
+	    yaw_total = yaw_ik+	yaw;
         }
-//        cout << "XYZ Gimbal Inverse Kinematic" << endl;
-//        cout << "\tYg: " << Yg << "\tZg: " << Zg << endl;
+
         cout << "Inverse Kinematic Control:" << endl;
         cout << "\tYg: " << Yg << "\tZg: " << Zg << endl;
         cout << "\tpx_x: " << pixel_x << "\tpx_y: " << pixel_y << endl;
@@ -203,9 +202,9 @@ public:
     }
 
 
-    void doSetGimbalAngle(float roll, float pitch, float yaw, int duration) {
+    void doSetGimbalAngle(float roll, float pitch, float yaw, int duration, bool mode) {
         dji_sdk::Gimbal gimbal_angle_data;
-        gimbal_angle_data.mode |= 1 << 0; // 1 - absolute, 0 - incremental
+        gimbal_angle_data.mode |= mode << 0; // 1 - absolute, 0 - incremental
         gimbal_angle_data.mode |= 0 << 1; // yaw_cmd_ignore
         gimbal_angle_data.mode |= 0 << 2; // roll_cmd_ignore
         gimbal_angle_data.mode |= 0 << 3; // pitch_cmd_ignore
@@ -224,13 +223,13 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "gimbal_track");
     ControlGimbal_dji control;
     cout << "Initialize Control" << endl;
-    control.doSetGimbalAngle(0, 0, 0, 10);
+    control.doSetGimbalAngle(0, 0, 0, 1, 1);
     control.setGimbalSpeed(90, 90, 90);
     cout << "Waiting to def speed 90 deg/sec" << endl;
     sleep(2);
     cout << "Done" << endl;
+    start = ros::Time::now().sec;
     ros::spinOnce();
-    cout << "Yaw offset: " << yaw_offset << endl;
     cout << "Init angle: " << RAD2DEG(roll) << ", " << RAD2DEG(pitch) << ", " << RAD2DEG(yaw) << endl;
 
     while (ros::ok()) {
