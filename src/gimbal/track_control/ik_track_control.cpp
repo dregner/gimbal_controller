@@ -57,7 +57,7 @@ int start;
 /// Leitura dos pixels
 int pixel_x, pixel_y;
 int xmin_, xmin_k = xmin_;
-float yaw_offset = 108.9;
+float yaw_offset = 111.2;
 
 
 using namespace std;

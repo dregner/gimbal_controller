@@ -62,7 +62,7 @@ float Kc = 3, z0 = 0.92;
 /// Leitura dos pixels
 int pixel_x, pixel_y;
 int xmin_, xmin_k = xmin_;
-float yaw_offset = 26.6;
+float yaw_offset = 111.2;
 
 
 using namespace std;

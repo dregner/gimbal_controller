@@ -36,7 +36,7 @@ public:
     gimbal_angle_sub = nh.subscribe<geometry_msgs::Vector3Stamped>
             ("dji_sdk/gimbal_angle", 10, &ReadAngles::gimbalAngleCallback, this);
     imu_angle_sub = nh.subscribe<sensor_msgs::Imu>
-            ("dji_sdk/imu",10, &ReadAngles::read_imu, this)
+            ("dji_sdk/imu",10, &ReadAngles::read_imu, this);
 
 
     }
