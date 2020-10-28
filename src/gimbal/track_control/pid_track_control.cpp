@@ -3,6 +3,8 @@
 //
 // System includes
 #include "unistd.h"
+#include <stdlib.h>
+#include <stdio.h>
 //#include <cstdint>
 #include <iostream>
 #include <fstream>
@@ -62,7 +64,7 @@ float Kc = 3, z0 = 0.92;
 /// Leitura dos pixels
 int pixel_x, pixel_y;
 int xmin_, xmin_k = xmin_;
-float yaw_offset = 111.2;
+float yaw_offset = 0;
 
 
 using namespace std;
@@ -222,6 +224,12 @@ public:
 };
 
 int main(int argc, char **argv) {
+
+    if(argc > 0){
+
+        yaw_offset = std::strtof(argv[0], NULL);
+    }
+    cout << "offset: " << yaw_offset << endl;
 
     ros::init(argc, argv, "gimbal_track");
     ControlGimbal_dji control;
