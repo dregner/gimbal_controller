@@ -16,27 +16,31 @@
 uint8_t mode;
 float roll, pitch, yaw;
 using namespace std;
-static std::ofstream gimbal_angles;
-int init_time;
+static std::ofstream gimbal_pose;
+double start, time_step;
 void print() {
-	int current_time = ros::Time::now().sec - init_time;
-    cout << "Time: " << current_time << " seconds" << endl;
+
+    cout << "Time: " << time_step << " seconds" << endl;
     cout << "Roll: " << roll << "\tPitch: " << pitch << "\tYaw: " << yaw << " deg" << endl;
     cout << "Roll: " << DEG2RAD(roll) << "\tPitch: " << DEG2RAD(pitch) << "\tYaw: " << DEG2RAD(yaw) << " rad" << endl;
     cout << "\033[2J\033[1;1H";     // clear terminal
 
 }
+void save_txt() {
+    if (gimbal_pose.is_open()) {
+        time_step = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec - start;
+        gimbal_pose << time_step << "\t" << DEG2RAD(roll) << "\t" << DEG2RAD(pitch) << "\t" << DEG2RAD(yaw) << "\n";
+    }
+}
 
 void gimbalAngleCallBack(const geometry_msgs::Vector3Stamped::ConstPtr &msg) {
     roll = msg->vector.y;
     pitch = msg->vector.x;
-    yaw = -76.3 - msg->vector.z;
+    yaw = msg->vector.z;
 
     print();
-    if(gimbal_angles.is_open()){
-        int dt = init_time - ros::Time::now().sec;
-        gimbal_angles << dt << "\t" << msg->vector.y << "\t" << msg->vector.x << "\t" << msg->vector.z <<endl;
-    }
+    save_txt();
+
 }
 
 int main(int argc, char **argv) {
@@ -44,9 +48,9 @@ int main(int argc, char **argv) {
     ros::NodeHandle nh;
 
     // ROS stuff
-    init_time = ros::Time::now().sec;
+    start = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
     ros::Subscriber gimbal_angle_subscriber = nh.subscribe("dji_sdk/gimbal_angle", 10, &gimbalAngleCallBack);
-    gimbal_angles.open("sdk_gimbal_angle.txt");
+    gimbal_pose.open("gimbal_pose.txt");
     while (ros::ok()) {
         ros::spin();
     }

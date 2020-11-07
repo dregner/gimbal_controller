@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
 
     vo_position.open("vo_position.txt");
     start = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
-    ros::Subscriber sub_imu = nh.subscribe("/dji_sdk/vo_position", 10, callback);
+    ros::Subscriber sub_vo = nh.subscribe("/dji_sdk/vo_position", 10, callback);
 
     ros::spin();
     return 0;
