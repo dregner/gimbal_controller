@@ -7,123 +7,83 @@
 #include <iostream>
 #include <sensor_msgs/Imu.h>
 #include <ignition/math2/ignition/math/Pose3.hh>
-
+#include <fstream>
+#include <boost/bind.hpp>
+#include <message_filters/subscriber.h>
+#include <message_filters/synchronizer.h>
+#include <message_filters/sync_policies/approximate_time.h>
+#include <message_filters/sync_policies/exact_time.h>
 
 #define RAD2DEG(RAD) ((RAD) * (180.0) / (M_PI))
 #define DEG2RAD(DEG) ((DEG) * (M_PI) / (180.0))
 
-float g_roll, g_pitch, g_yaw;
-float rpa_roll, rpa_pitch, rpa_yaw;
-int i = 0;
-bool first_time = false;
-
+using namespace sensor_msgs;
+using namespace geometry_msgs;
 using namespace std;
 
-class ReadAngles {
-private:
+float g_roll, g_pitch, g_yaw;
+float i_roll, i_pitch, i_yaw;
+double start, last_control=0, actual_time;
+int i = 0;
+bool first_time = false;
+static std::ofstream angles_pose;
 
-
-    ros::NodeHandle nh;
-
-    geometry_msgs::Vector3Stamped gimbal_angle;
-    ros::Subscriber imu_angle_sub;
-    ros::Subscriber gimbal_angle_sub;
-
-
-public:
-    ReadAngles() {
-
-    gimbal_angle_sub = nh.subscribe<geometry_msgs::Vector3Stamped>
-            ("dji_sdk/gimbal_angle", 10, &ReadAngles::gimbalAngleCallback, this);
-    imu_angle_sub = nh.subscribe<sensor_msgs::Imu>
-            ("dji_sdk/imu",10, &ReadAngles::read_imu, this);
-
-
+void save_txt() {
+    if (angles_pose.is_open()) {
+        angles_pose << actual_time
+        << "\t" << DEG2RAD(g_roll) << "\t" << DEG2RAD(g_pitch) << "\t" << DEG2RAD(g_yaw)
+        << "\t" << i_roll << "\t" << i_pitch << "\t" << i_yaw  << "\n";
     }
+}
+void print(){
+    cout << "IMU" << endl;
+    cout << "\tR: " << RAD2DEG(i_roll) << endl;
+    cout << "\tP: " << RAD2DEG(i_pitch) << endl;
+    cout << "\tY: " << RAD2DEG(i_yaw) << endl;
+    cout << "Gimbal" << endl;
+    cout << "\tR: " << g_roll << endl;
+    cout << "\tP: " << g_pitch << endl;
+    cout << "\tY: " << g_yaw << endl;
 
+}
 
-    ~ReadAngles() {}
-
-    void read_imu(const sensor_msgs::Imu::ConstPtr &msg){
-        msg->orientation.x;
-        ignition::math::Quaterniond rpy;
-        rpy.Set(msg->orientation.w, msg->orientation.x, msg->orientation.y, msg->orientation.z);
-
-        rpa_roll = RAD2DEG(rpy.Roll());
-        rpa_pitch = RAD2DEG(rpy.Pitch());
-        rpa_yaw = RAD2DEG(rpy.Yaw());
-
+void callback(const Vector3StampedConstPtr &pose_g,
+              const ImuConstPtr &pose_i) {
+    ignition::math::Quaterniond rpy;
+    rpy.Set(pose_i->orientation.w, pose_i->orientation.x, pose_i->orientation.y, pose_i->orientation.z);
+    i_roll = rpy.Roll();
+    i_pitch = rpy.Pitch();
+    i_yaw = rpy.Yaw();
+    g_roll = pose_g->vector.y;
+    g_pitch = pose_g->vector.x;
+    g_yaw = pose_g->vector.z;
+    print();
+    actual_time = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
+    double dt = actual_time - last_control;
+    if (dt >= 0.05) {
+        save_txt();
+        last_control = (ros::Time::now().nsec * 1e-9 + ros::Time::now().sec);
     }
-
-    void gimbalAngleCallback(const geometry_msgs::Vector3Stamped::ConstPtr &msg) {
-        gimbal_angle = *msg;
-        g_roll = gimbal_angle.vector.y;
-        g_pitch = gimbal_angle.vector.x;
-        g_yaw = gimbal_angle.vector.z;
-        float offset_yaw = 90 - rpa_yaw;
-        ROS_INFO("Gimbal angle: [ %f, %f, %f ] deg", g_roll, g_pitch, g_yaw);
-        ROS_INFO("Gimbal offset yaw: %f", offset_yaw);
-        ROS_INFO("Imu angle: [ %f, %f, %f ] deg", rpa_roll, rpa_pitch, rpa_yaw);
-    }
-};
-
-
-int main(int argc, char **argv) {
-
-
-    ros::init(argc, argv, "read_angles");
-    ros::NodeHandle nh;
-
-    ReadAngles gimbal_imu;
-
-
-    while (ros::ok()) {
-        ros::spinOnce();
-    }
-    return 0;
 }
 
 
-
-/*
 int main(int argc, char **argv) {
-    ros::init(argc, argv, "write_sdk_gimbal");
+
+
+    ros::init(argc, argv, "read_imu_gimbal");
     ros::NodeHandle nh;
+    message_filters::Subscriber<Imu> imu_pose(nh, "/dji_sdk/imu", 1);
+    message_filters::Subscriber<Vector3Stamped> gimbal_pose(nh, "/dji_sdk/gimbal_angle", 1);
 
-    // ROS stuff
+    angles_pose.open("angles_pose.txt");
+    typedef message_filters::sync_policies::ApproximateTime<Imu, Vector3Stamped> MySyncPolicy;
+    // ExactTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
+    message_filters::Synchronizer<MySyncPolicy> sync(MySyncPolicy(10),imu_pose, gimbal_pose);
+    // TODO: Fix a boost problem of geometry_msgs and uncomment at CMAKE
+    sync.registerCallback(boost::bind(&callback, _1, _2));
 
 
-    // Display interactive prompt
-    cout << "| Available commands:" << endl;
-    cout << "\t[a] Change moode" << endl;
-    cout << "\t[b] Change roll position" << endl;
-    cout << "\t[c] Change pitch position" << endl;
-    cout << "\t[d] Change yaw position" << endl;
-    char inputChar;
-    cin >> inputChar;
+    ros::spin();
+    return 0;
+}
 
-    switch (inputChar) {
-        case 'a':
-            cout << "0 - Incremental or 1 - Absolute" << endl;
-            cin >> mode;
-            gimbal_angle_func(mode);
-            break;
-        case 'b':
-            cout << "Roll value (deg): ";
-            cin >> inputValue_r;
-            gimbal_angle_func(inputValue_r);
-            break;
-        case 'c':
-            cout << "Pitch value (deg): ";
-            cin >> inputValue_p;
-            gimbal_angle_func(inputValue_p);
-            break;
-        case 'd':
-            cout << "Yaw value (deg): ";
-            cin >> inputValue_y;
-            gimbal_angle_func(inputValue_y);
-            break;
-        default:
-            break;
-    }
-}*/

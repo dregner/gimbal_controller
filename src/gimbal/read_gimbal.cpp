@@ -17,7 +17,7 @@ uint8_t mode;
 float roll, pitch, yaw;
 using namespace std;
 static std::ofstream gimbal_pose;
-double start, time_step;
+double start, time_step, last_control=0;
 void print() {
 
     cout << "Time: " << time_step << " seconds" << endl;
@@ -39,7 +39,13 @@ void gimbalAngleCallBack(const geometry_msgs::Vector3Stamped::ConstPtr &msg) {
     yaw = msg->vector.z;
 
     print();
-    save_txt();
+    double actual_time = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
+    double dt = actual_time - last_control;
+    if (dt >= 0.05) {
+        save_txt();
+        last_control = (ros::Time::now().nsec * 1e-9 + ros::Time::now().sec);
+    }
+
 
 }
 

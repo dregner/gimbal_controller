@@ -12,7 +12,7 @@
 using namespace std;
 static std::ofstream imu_pose;
 float roll, pitch, yaw;
-double start;
+double start, last_control=0;
 void save_txt() {
     if (imu_pose.is_open()) {
         double time_step = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec - start;
@@ -21,18 +21,22 @@ void save_txt() {
 }
 
 void callback(const sensor_msgs::Imu::ConstPtr &msg){
-    msg->orientation.x;
     ignition::math::Quaterniond rpy;
     rpy.Set(msg->orientation.w, msg->orientation.x, msg->orientation.y, msg->orientation.z);
-
+    roll = rpy.Roll();
+    pitch = rpy.Pitch();
+    yaw = rpy.Yaw();
     cout << "R: " << RAD2DEG(rpy.Roll()) << endl;
     cout << "P: " << RAD2DEG(rpy.Pitch()) << endl;
     cout << "Y: " << RAD2DEG(rpy.Yaw()) << endl;
     cout << "OFFSET YAW:" << 90-RAD2DEG(rpy.Yaw()) << endl;
     cout << "\033[2J\033[1;1H";     // clear terminal
-
-    save_txt();
-
+    double actual_time = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
+    double dt = actual_time - last_control;
+    if (dt >= 0.05) {
+        save_txt();
+        last_control = (ros::Time::now().nsec * 1e-9 + ros::Time::now().sec);
+    }
 }
 
 
