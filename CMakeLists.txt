@@ -160,8 +160,8 @@ target_link_libraries(read_imu ${catkin_LIBRARIES})
 add_executable(read_vopositon src/sensors/read_voposition.cpp)
 target_link_libraries(read_vopositon ${catkin_LIBRARIES})
 
-#add_executable(read_imu_gimbal src/sensors/read_gimbal_imu.cpp)
-#target_link_libraries(read_imu_gimbal ${catkin_LIBRARIES})
+add_executable(read_imu_gimbal src/sensors/read_gimbal_imu.cpp)
+target_link_libraries(read_imu_gimbal ${catkin_LIBRARIES})
 
 add_executable(read_poses src/sensors/read_poses.cpp)
 target_link_libraries(read_poses ${catkin_LIBRARIES})

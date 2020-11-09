@@ -47,8 +47,8 @@ void print(){
 
 }
 
-void callback(const Vector3StampedConstPtr &pose_g,
-              const ImuConstPtr &pose_i) {
+void callback(const ImuConstPtr &pose_i,
+            const Vector3StampedConstPtr &pose_g) {
     ignition::math::Quaterniond rpy;
     rpy.Set(pose_i->orientation.w, pose_i->orientation.x, pose_i->orientation.y, pose_i->orientation.z);
     i_roll = rpy.Roll();
