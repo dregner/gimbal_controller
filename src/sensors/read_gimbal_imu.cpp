@@ -79,7 +79,6 @@ int main(int argc, char **argv) {
     typedef message_filters::sync_policies::ApproximateTime<Imu, Vector3Stamped> MySyncPolicy;
     // ExactTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
     message_filters::Synchronizer<MySyncPolicy> sync(MySyncPolicy(10),imu_pose, gimbal_pose);
-    // TODO: Fix a boost problem of geometry_msgs and uncomment at CMAKE
     sync.registerCallback(boost::bind(&callback, _1, _2));
 
 
