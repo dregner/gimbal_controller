@@ -12,6 +12,9 @@
 #include <darknet_ros_msgs/BoundingBoxes.h>
 #include <darknet_ros_msgs/ObjectCount.h>
 
+#define C_PI (double)3.141592653589793
+#define DEG2RAD(DEG) ((DEG) * ((C_PI) / (180.0)))
+#define RAD2DEG(RAD) ((RAD) * (180.0) / (C_PI))
 
 ///Parameters of RPA launcher
 int resolution_x = 1920;
@@ -33,11 +36,9 @@ int object_count;
 
 
 /// Camera parameters
-float deg2rad = M_PI / 180;
 float Lx;
-double dx = 5; //Distence to object
+double dx = 1; //Distance to object
 double GSD;
-
 
 /// Parametros de controle para POS Y Pixel PID
 // TODO: Ajustar parâmetros Kc e z0
@@ -48,13 +49,13 @@ double er_k_x = 0, er_k_y = 0;
 /// Tempo de amostragem para malha de controle
 int32_t Ts = 0.05; /// segundos
 bool first_time = true;
-double dt, last_control;
+double last_control, start_time;
 
 
 /// Leitura Joint States
 float roll, pitch, yaw;
 float yaw_ik, pitch_ik, yaw_total, pitch_total;
-float Kc = 0.1, z0 = 0.95;
+float Kc = 0.8, z0 = 0.92;
 
 using namespace std;
 static std::ofstream inv_kinematic;
@@ -99,8 +100,8 @@ public:
         pub_yaw = nh_.advertise<std_msgs::Float64>("/" + GetParams::getRpaName() + "/gimbal_yaw/command", 1);
 
 
-//        control_pid.open("control_pid.txt");
-//        inv_kinematic.open("inverse.txt");
+//        control_pid.open("pid_control_dx5_d5.txt");
+        inv_kinematic.open("inverse_kinematic_dx10_d1.txt");
     }
 
     ~Inverse_Kinematic() {
@@ -119,7 +120,7 @@ public:
         central_pixel_y = resolution_y / 2;
         dx = GetParams::getDistance_dx();
         aov_h = GetParams::getAov_h();
-        Lx = 2 * tan(deg2rad * (float) aov_h / 2) * (float) dx;
+        Lx = 2 * tan(DEG2RAD((float) aov_h) / 2) * (float) dx;
         GSD = Lx / (float) resolution_x; // GSD from a gazebo environment where doesnt have a pixel dimension (m/px)
     }
 
@@ -158,40 +159,37 @@ public:
             }
 
 
-                int xmin = msg->bounding_boxes[object_count].xmin;
+            int xmin = msg->bounding_boxes[object_count].xmin;
+            int xmax = msg->bounding_boxes[object_count].xmax;
+            int ymin = msg->bounding_boxes[object_count].ymin;
+            int ymax = msg->bounding_boxes[object_count].ymax;
 
-                int xmax = msg->bounding_boxes[object_count].xmax;
-                int ymin = msg->bounding_boxes[object_count].ymin;
-                int ymax = msg->bounding_boxes[object_count].ymax;
+            pixel_x = pixel_x * 0.6 + 0.4 * ((xmax - xmin) / 2 + xmin);
+            pixel_y = pixel_y * 0.6 + 0.4 * ((ymax - ymin) / 2 + ymin);
 
-                pixel_x = pixel_x * 0.9 + 0.1 * ((xmax - xmin) / 2 + xmin);
-                pixel_y = pixel_y * 0.9 + 0.1 * ((ymax - ymin) / 2 + ymin);
-
-            if ((abs(pixel_x - pixel_x_k) < 80) && (abs(pixel_y - pixel_y_k) < 80)){
+            if ((abs(pixel_x - pixel_x_k) < 1000) && (abs(pixel_y - pixel_y_k) < 1000)) {
                 pixel_x_k = pixel_x;
                 pixel_y_k = pixel_y;
                 print();
-                inverse_kinematic();
+                if (inv_kinematic.is_open()) {
+                    inverse_kinematic();
+                }
+                if (control_pid.is_open()) {
+                    control();
+
+                }
             } else {
                 object_count++;
                 if (object_count > object_founded) {
                     object_count = 0;
-                    cout << "\n\nNOT FOUND PROPER OBJECT" << endl;
-                    cout << "\033[2J\033[1;1H";     // clear terminal
                 }
             }
         } else {
             object_count++;
             if (object_count > object_founded) {
                 object_count = 0;
-                cout << "\n\nNOT FOUND PROPER OBJECT" << endl;
-                cout << "\033[2J\033[1;1H";     // clear terminal
             }
         }
-
-
-//        control();
-
         cout << "\033[2J\033[1;1H";     // clear terminal
     }
 
@@ -199,7 +197,6 @@ public:
         cout << "Camera Resolution" << endl;
         cout << "\tResolution: " << resolution_x << " x " << resolution_y << "\tLx: " << Lx << "\tGSD: "
              << GSD << " m/px" << endl;
-
         cout << "Darknet detection" << endl;
         cout << "\tn_object: " << object_count << "\ttotal: " << object_founded << endl;
         cout << "\tobject_id: " << object_id << endl;
@@ -207,48 +204,38 @@ public:
         cout << "\tPixel Pos: " << pixel_x << " x  " << pixel_y << endl;
         cout << "\tPixel REF: " << central_pixel_x << " x " << central_pixel_y << endl;
         cout << "\tPixel err: " << pixel_x - central_pixel_x << " x " << pixel_y - central_pixel_y << endl;
-
         cout << "Gimbal angles" << endl;
-        cout << fixed << "\tr: " << 180 / M_PI * round(roll) << "\tp: " << 180 / M_PI * round(pitch) << "\ty: "
-             << 180 / M_PI * round(yaw) << endl;
+        cout << fixed << "\tr: " << RAD2DEG(round(roll)) << "\tp: " << RAD2DEG(round(pitch)) << "\ty: "
+             << RAD2DEG(round(yaw)) << endl;
     }
 
 
     void inverse_kinematic() {
-        double Zg = (float) (pixel_y - central_pixel_y) * GSD; //(px - px)*m/px
-        double Yg = (float) (-pixel_x + central_pixel_x) * GSD; //(px - px)*m/px
+        double Zg = (float) (- pixel_y + central_pixel_y) * GSD; //(px - px)*m/px
+        double Yg = (float) (- pixel_x + central_pixel_x) * GSD; //(px - px)*m/px
 
-        pitch_ik = asin(Zg / dx); //Zg/abs(Zg)*
-        pitch_ik = round(pitch_ik);
-        yaw_ik = asin(Yg / (dx * cos(pitch_ik))); //Yg/abs(Yg)*
+        yaw_ik = asin(Yg / dx); //Yg/abs(Yg)*
         yaw_ik = round(yaw_ik);
-        pitch_total = pitch_total*0.9 + 0.1*round(pitch + pitch_ik);
-        yaw_total =yaw_total*0.9 + 0.1*round(yaw + yaw_ik);
-        double actual_time = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
-        dt = actual_time - last_control;
+
+        pitch_ik = asin(-Zg /(dx * cos(yaw_ik))); //Zg/abs(Zg)*
+        pitch_ik = round(pitch_ik);
+
+        pitch_total = pitch_total * 0.9 + 0.1 * round(pitch + pitch_ik);
+        yaw_total = yaw_total * 0.9 + 0.1 * round(yaw + yaw_ik);
+        double dt = (ros::Time::now().nsec * 1e-9 + ros::Time::now().sec) - last_control;
         if (dt >= Ts) {
-            if (abs(-pixel_x + central_pixel_x) >= 20) {
-                msg_yaw.data = yaw_total;
-                pub_yaw.publish(msg_yaw);
-            }
-            if (abs((pixel_y - central_pixel_y)) >= 20) {
-                msg_pitch.data = pitch_total;
-                pub_pitch.publish(msg_pitch);
-            }
-            if (inv_kinematic.is_open()) {
-                inv_kinematic << ros::Time::now().nsec * 1e-9 + ros::Time::now().sec << "\t" << pitch << "\t" << yaw
-                              << "\t" << pitch_ik + pitch << "\t"
-                              << yaw_ik + yaw << "\t"
-                              << Yg << "\t" << Zg << "\t"
-                              << pixel_x << "\t" << pixel_y << "\t" << central_pixel_x - pixel_x << "\t"
-                              << central_pixel_y - pixel_y
-                              << "\n";
-            }
+//            if (abs(-pixel_x + central_pixel_x) >= 20) {
+            msg_yaw.data = yaw_total;
+            pub_yaw.publish(msg_yaw);
+//            }
+//            if (abs((pixel_y - central_pixel_y)) >= 20) {
+            msg_pitch.data = pitch_total;
+            pub_pitch.publish(msg_pitch);
+//            }
+            save_txt();
             last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
 
         }
-//        cout << "XYZ Gimbal Inverse Kinematic" << endl;
-//        cout << "\tYg: " << Yg << "\tZg: " << Zg << endl;
         cout << "Inverse Kinematic Control:" << endl;
         cout << "\tyaw ik: " << yaw_ik << "\tyaw desired: " << yaw_total << endl;
         cout << "\tpitch ik: " << pitch_ik << "\tpitch desired: " << pitch_total << endl;
@@ -259,15 +246,14 @@ public:
     void control() {
         float er_x = (central_pixel_x - pixel_x) * GSD;
         float er_y = (central_pixel_y - pixel_y) * GSD;
-        double actual_time = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
-        dt = actual_time - last_control;
+        double dt = (ros::Time::now().nsec * 1e-9 + ros::Time::now().sec) - last_control;
         if (dt >= Ts) {
-            if (abs(er_x) > central_pixel_x * GSD) {
+            if (abs(er_x) > central_pixel_x * GSD) { /// Anti-windup PID X axis
                 ux = u_k_x;
             } else {
                 ux = (Kc * (er_x - z0 * er_k_x) + u_k_x);
             }
-            if (abs(er_y) > central_pixel_y * GSD) {
+            if (abs(er_y) > central_pixel_y * GSD) { /// Anti-windup PID Y axis
                 uy = u_k_y;
             } else {
                 uy = (-Kc * (er_y - z0 * er_k_y) + u_k_y);
@@ -278,14 +264,7 @@ public:
             pub_yaw.publish(msg_yaw);
             u_k_x = ux;
             u_k_y = uy;
-
-
-            if (control_pid.is_open()) {
-                control_pid << ros::Time::now().nsec * 1e-9 + ros::Time::now().sec << "\t" << pitch << "\t" << yaw
-                            << "\t" << u_k_x << "\t" << u_k_y << "\t"
-                            << central_pixel_x - pixel_x << "\t"
-                            << central_pixel_y - pixel_y << "\t" << pixel_x << "\t" << pixel_y << "\n";
-            }
+            save_txt();
             last_control = ros::Time::now().nsec * 1e-9 + ros::Time::now().sec;
 
         }
@@ -297,15 +276,36 @@ public:
 
     }
 
+    void save_txt() {
+        if (inv_kinematic.is_open()) {
+            double time = (ros::Time::now().nsec * 1e-9 + ros::Time::now().sec - start_time);
+            inv_kinematic << time << "\t" << pitch << "\t" << yaw
+                          << "\t" << pitch_total << "\t"
+                          << yaw_total << "\t"
+                          << pixel_x << "\t" << pixel_y << "\t" << central_pixel_x - pixel_x << "\t"
+                          << central_pixel_y - pixel_y
+                          << "\n";
+        }
+        if (control_pid.is_open()) {
+            double time = (ros::Time::now().nsec * 1e-9 + ros::Time::now().sec) - start_time;
+
+            control_pid << time << "\t" << pitch << "\t" << yaw
+                        << "\t" << u_k_x << "\t" << u_k_y << "\t"
+                        << central_pixel_x - pixel_x << "\t"
+                        << central_pixel_y - pixel_y << "\t" << pixel_x << "\t" << pixel_y << "\n";
+        }
+    }
 };
 
 int main(int argc, char **argv) {
 
 
     ros::init(argc, argv, "Gimbal_Control");
-
     Inverse_Kinematic ik;
 
+    while (ros::Time::now().sec < 50) {
+        cout << "\r" << "Waiting, time: " << ros::Time::now().sec << " seg" << std::flush;// << "\033[2J\033[1;1H";
+    }
     while (ros::ok()) {
         ros::spinOnce();
     }

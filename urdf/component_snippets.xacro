@@ -11,7 +11,7 @@
       mass_imu_sensor gyroscope_noise_density gyroscope_random_walk
       gyroscope_bias_correlation_time gyroscope_turn_on_bias_sigma
       accelerometer_noise_density accelerometer_random_walk
-      accel_bias_correlation_time accelerometer_turn_on_bias_sigma
+      accelerometer_bias_correlation_time accelerometer_turn_on_bias_sigma
       *inertia *origin">
         <!-- IMU link -->
         <link name="${namespace}/imu${imu_suffix}_link">
@@ -59,7 +59,7 @@
                     <!-- Accelerometer bias random walk. [m/s^2/s/sqrt(Hz)] -->
                     <accelerometerRandomWalk>${accelerometer_random_walk}</accelerometerRandomWalk>
                     <!-- Accelerometer bias correlation time constant [s] -->
-                    <accelerometerBiasCorrelationTime>${accel_bias_correlation_time}</accelerometerBiasCorrelationTime>
+                    <accelerometerBiasCorrelationTime>${accelerometer_bias_correlation_time}</accelerometerBiasCorrelationTime>
                     <!-- Accelerometer turn on bias standard deviation [m/s^2] -->
                     <accelerometerTurnOnBiasSigma>${accelerometer_turn_on_bias_sigma}</accelerometerTurnOnBiasSigma>
                 </plugin>

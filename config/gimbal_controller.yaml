@@ -1,22 +1,22 @@
-gimbal:
-  # Publish all joint states -----------------------------------
-  joint_state_controller:
-    type: joint_state_controller/JointStateController
-    publish_rate: 50
+#m210:
+# Publish all joint states -----------------------------------
+joint_state:
+  type: joint_state_controller/JointStateController
+  publish_rate: 50
 
-  # Position Controllers ---------------------------------------
+# Position Controllers ---------------------------------------
 
-  yaw_position_controller:
-    type: effort_controllers/JointPositionController
-    joint: joint_yaw
-    pid: {p: 0.005, i: 0.05, d: 0.010}
+gimbal_yaw:
+  type: effort_controllers/JointPositionController
+  joint: /m210/gimbal_joint_yaw
+  pid: {p: 0.1, i: 0.007, d: 0.000}
 
-  roll_position_controller:
-    type: effort_controllers/JointPositionController
-    joint: joint_roll
-    pid: {p: 0.005, i: 0.05, d: 0.0010}
+gimbal_roll:
+  type: effort_controllers/JointPositionController
+  joint: /m210/gimbal_joint_roll
+  pid: {p: 0.1, i: 0.007, d: 0.000}
 
-  pitch_position_controller:
-    type: effort_controllers/JointPositionController
-    joint: joint_pitch
-    pid: {p: 0.01, i: 0.005, d: 0.000}
+gimbal_pitch:
+  type: effort_controllers/JointPositionController
+  joint: /m210/gimbal_joint_pitch
+  pid: {p: 0.1, i: 0.0001, d: 0.000}

@@ -1,4 +1,4 @@
 # gimbal_controller
-A gimbal controller using OpenCV to detect and track a object
+A gimbal controller sugin darknet_ros to detect the objects.
 
 This is a simulation enviroment developed for Gazebo using plataform ROS

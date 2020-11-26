@@ -1,0 +1,14 @@
+material Airplane/Normal
+{
+  receive_shadows off
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture piper_diffuse.jpg
+      }
+    }
+  }
+}

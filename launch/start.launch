@@ -3,16 +3,26 @@
     <arg name="verbose" default="true"/>
     <arg name="paused" default="false"/>
     <arg name="use_sim_time" default="true"/>
-    <arg name="gui" default="false"/>
+    <arg name="gui" default="true"/>
     <arg name="camera" default="false"/>
     <arg name="gimbal" default="true"/>
+    <arg name="z" default="10"/>
+    <arg name="x" default="-5.5"/>
+
+    <arg name="support_height" value="$(arg z)"/>
+    <arg name="x_resolution" default="1920"/>
+    <arg name="y_resolution" default="1080"/>
+    <arg name="dx_object" default="5"/>
+    <arg name="h_aov" default="22.56"/>
+    <arg name="visualize" default="true"/>
+
 
 
 
     <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
-    <!-- <env name="GAZEBO_MODEL_PATH" value="${GAZEBO_MODEL_PATH}:$(find vant3d_gazebo)/models"/>
-    <env name="GAZEBO_RESOURCE_PATH" value="${GAZEBO_RESOURCE_PATH}:$(find vant3d_gazebo)/models"/> -->
-    
+     <env name="GAZEBO_MODEL_PATH" value="${GAZEBO_MODEL_PATH}:$(find gimbal_controller)/models"/>
+    <env name="GAZEBO_RESOURCE_PATH" value="${GAZEBO_RESOURCE_PATH}:$(find gimbal_controller)/models"/>
+
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="world_name" value="$(find gimbal_controller)/worlds/$(arg world_name).world"/>
         <!-- more default parameters can be changed here -->
@@ -35,19 +45,24 @@
 
     <group if="$(arg gimbal)">
     <param name="robot_description"
-           command="$(find xacro)/xacro --inorder '$(find gimbal_controller)/urdf/gimbal_structure.xacro'" />
+           command="$(find xacro)/xacro --inorder '$(find gimbal_controller)/urdf/gimbal_structure.xacro'
+                    support_height:=$(arg support_height)            x_resolution:=$(arg x_resolution)
+                    y_resolution:=$(arg y_resolution)
+                    h_aov:=$(arg h_aov)
+                    visualize:=$(arg visualize)"/>
 
     <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
     <node name="gimbal_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-          args="-urdf -x -5.5 -y -0 -z 0 -model gimbal -param robot_description"/>
+          args="-urdf -x $(arg x) -y -0 -z 0 -model m210 -param robot_description"/>
 
         <rosparam file="$(find gimbal_controller)/config/gimbal_controller.yaml" command="load"/>
 
         <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
-              output="screen" ns="gimbal" args="joint_state_controller
-        					  yaw_position_controller
-        					  roll_position_controller
-                              pitch_position_controller">
+              output="screen" ns="/m210" args="
+                              joint_state
+        					  gimbal_yaw
+        					  gimbal_roll
+                              gimbal_pitch">
         </node>
 
 

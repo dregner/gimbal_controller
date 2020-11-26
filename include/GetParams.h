@@ -18,6 +18,8 @@ public:
     static int getResolution_y();
     static double getAov_h();
     static double getDistance_dx();
+    static bool getUse_gimbal();
+
 
 
 };

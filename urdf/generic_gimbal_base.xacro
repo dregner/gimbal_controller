@@ -25,12 +25,13 @@
     <xacro:macro name="generic_gimbal"
                  params="robot_namespace camera_suffix parent_link
                  horizontal_fov image_width image_height image_format
-                 max_range visualize type mass z x">
+                 max_range visualize type mass x y z">
 
 
         <joint name="${robot_namespace}/gimbal_1_joint" type="fixed">
             <axis xyz="1 0 0"/>
-            <origin xyz="${x} 0 ${z}" rpy="0 0 0"/>
+            <!--<limit effort="10" velocity="<1.0" lower="-1.57" upper="1.57"/>-->
+            <origin xyz="${x} ${y} ${z}" rpy="0 0 0"/>
             <parent link="${parent_link}"/>
             <child link="${robot_namespace}/gimbal_1_link"/>
         </joint>
@@ -42,24 +43,27 @@
                     <mesh filename="${parte_1}" scale="1 1 1"/>
                 </geometry>
             </collision>
-            <visual>
-                <origin xyz="0 0 0" rpy="0 0 ${pi/2}"/>
-                <geometry>
-                    <mesh filename="${parte_1}" scale="1 1 1"/>
-                </geometry>
-            </visual>
+            <!--            <visual>-->
+            <!--                <origin xyz="0 0 0" rpy="0 0 ${pi/2}"/>-->
+            <!--                <geometry>-->
+            <!--                    <mesh filename="${parte_1}" scale="1 1 1"/>-->
+            <!--                </geometry>-->
+            <!--            </visual>-->
             <inertial>
-                <mass value="1"/> <!--021-->
+                <mass value="0.021"/> <!--021-->
                 <origin xyz="0 0 ${z}" rpy="0 0 0"/>
-                <xacro:box_inertia x="0.7" y="0.7" z="0.7" mass="0.1"/>
+                <!--                <xacro:box_inertia x="0.1" y="0.1" z="0.1" mass="0.021"/>-->
+                <!--                <inertia ixx="34e-7" ixy="0.00" ixz="0.0" iyy="28.7e-6" iyz="0.0" izz="29.6e-6"/>-->
+                <xacro:box_inertia x="0.01" y="0.01" z="0.01" mass="0.02"/>
 
             </inertial>
         </link>
 
 
-        <joint name="joint_yaw" type="continuous">
+        <joint name="gimbal_joint_yaw" type="continuous">
             <axis xyz="0 0 1"/>
-            <dynamics damping="0.01" friction="0.0"/>
+            <!--            <limit effort="100" velocity="1.0" lower="-1.57" upper="1.57"/>-->
+            <dynamics damping="0.007" friction="0.0"/>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <parent link="${robot_namespace}/gimbal_1_link"/>
             <child link="${robot_namespace}/gimbal_2_link"/>
@@ -80,15 +84,18 @@
                 </geometry>
             </visual>
             <inertial>
-                <mass value="1"/>
+                <mass value="0.00369"/>
                 <origin xyz="0 0 0" rpy="0 0 0"/>
-                <xacro:box_inertia x="0.7" y="0.7" z="0.7" mass="0.1"/>
+                <xacro:box_inertia x="0.01" y="0.01" z="0.01" mass="0.003"/>
+                <!--                <xacro:box_inertia x="0.1" y="0.1" z="0.1" mass="0.00369"/>-->
+                <!--                <inertia ixx="13e-7" ixy="0" ixz="0" iyy="19e-7" iyz="0.0" izz="27e-7"/>-->
             </inertial>
         </link>
 
-        <joint name="joint_roll" type="continuous">
+        <joint name="gimbal_joint_roll" type="continuous">
             <axis xyz="1 0 0"/>
-            <dynamics damping="0.01" friction="0.0"/>
+            <!--            <limit effort="100" velocity="1.0" lower="-1.57" upper="1.57"/>-->
+            <dynamics damping="0.007" friction="0.0"/>
             <origin xyz="-0.048 0 -0.0595" rpy="0 0 0"/>
             <parent link="${robot_namespace}/gimbal_2_link"/>
             <child link="${robot_namespace}/gimbal_3_link"/>
@@ -109,15 +116,18 @@
             </visual>
 
             <inertial>
-                <mass value="0.1"/>
+                <mass value="0.002"/>
                 <origin xyz="0 0 0" rpy="0 0 0"/>
-                <xacro:box_inertia x="0.7" y="0.7" z="0.7" mass="0.1"/>
+                <xacro:box_inertia x="0.01" y="0.01" z="0.01" mass="0.002"/>
+
+                <!--                <inertia ixx="14e-7" ixy="0.0" ixz="0.0" iyy="20e-7" iyz="0.0" izz="6e-6"/>-->
+                <!--                <xacro:box_inertia x="0.1" y="0.1" z="0.1" mass="0.002"/>-->
             </inertial>
         </link>
 
-        <joint name="joint_pitch" type="continuous">
+        <joint name="gimbal_joint_pitch" type="continuous">
             <axis xyz="0 1 0"/>
-            <dynamics damping="0.01" friction="0.0"/>
+            <dynamics damping="0.007" friction="0.0"/>
             <origin xyz="0.038 0 0" rpy="0 0 0"/>
             <parent link="${robot_namespace}/gimbal_3_link"/>
             <child link="${robot_namespace}/camera_link"/>
@@ -143,7 +153,6 @@
             </inertial>
         </link>
 
-
         <joint name="camera_joint" type="fixed">
             <axis xyz="0 0 0"/>
             <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -154,85 +163,85 @@
         <link name="camera_link_optical">
         </link>
 
-<!--&lt;!&ndash;         ADIS16448 IMU. &ndash;&gt;-->
-<!--        <xacro:imu_plugin_macro-->
-<!--                namespace="${robot_namespace}"-->
-<!--                imu_suffix="camera"-->
-<!--                parent_link="${robot_namespace}/camera_link"-->
-<!--                imu_topic="imu1"-->
-<!--                mass_imu_sensor="0.015"-->
-<!--                gyroscope_noise_density="0.0003394"-->
-<!--                gyroscope_random_walk="0.000038785"-->
-<!--                gyroscope_bias_correlation_time="1000.0"-->
-<!--                gyroscope_turn_on_bias_sigma="0.0087"-->
-<!--                accelerometer_noise_density="0.004"-->
-<!--                accelerometer_random_walk="0.006"-->
-<!--                accelerometer_bias_correlation_time="300.0"-->
-<!--                accelerometer_turn_on_bias_sigma="0.1960">-->
-<!--            <inertia ixx="0.000001" ixy="0.0" ixz="0.0" iyy="0.000001" iyz="0.0" izz="0.000001" />-->
-<!--            <origin xyz="0 0 0" rpy="0 0 0" />-->
-<!--        </xacro:imu_plugin_macro>-->
+        <!--         ADIS16448 IMU. -->
+        <xacro:imu_plugin_macro
+                namespace="${robot_namespace}"
+                imu_suffix="camera"
+                parent_link="${robot_namespace}/camera_link"
+                imu_topic="imu1"
+                mass_imu_sensor="0.015"
+                gyroscope_noise_density="0.0003394"
+                gyroscope_random_walk="0.000038785"
+                gyroscope_bias_correlation_time="1000.0"
+                gyroscope_turn_on_bias_sigma="0.0087"
+                accelerometer_noise_density="0.004"
+                accelerometer_random_walk="0.006"
+                accelerometer_bias_correlation_time="300.0"
+                accelerometer_turn_on_bias_sigma="0.1960">
+            <inertia ixx="0.000001" ixy="0.0" ixz="0.0" iyy="0.000001" iyz="0.0" izz="0.000001" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+        </xacro:imu_plugin_macro>
 
 
 
 
-                <gazebo reference="camera_link_optical">
-                    <sensor type="camera" name="camera1">
-                        <update_rate>30.0</update_rate>
-                        <visualize>${visualize}</visualize>
+        <gazebo reference="camera_link_optical">
+            <sensor type="camera" name="camera1">
+                <update_rate>30.0</update_rate>
+                <visualize>${visualize}</visualize>
 
-                        <camera name="${camera_suffix}">
-                            <horizontal_fov>${horizontal_fov}</horizontal_fov>
+                <camera name="${camera_suffix}">
+                    <horizontal_fov>${horizontal_fov}</horizontal_fov>
 
-                            <image>
-                                <width>${image_width}</width>
-                                <height>${image_height}</height>
-                                <format>${image_format}</format>
-                            </image>
+                    <image>
+                        <width>${image_width}</width>
+                        <height>${image_height}</height>
+                        <format>${image_format}</format>
+                    </image>
 
-                            <clip>
-                                <near>0.02</near>
-                                <far>${max_range}</far>
-                            </clip>
+                    <clip>
+                        <near>0.02</near>
+                        <far>${max_range}</far>
+                    </clip>
 
-                            <noise>
-                                <type>gaussian</type>
-                                <mean>0.00</mean>
-                                <stddev>0.007</stddev>
-                            </noise>
-                        </camera>
+                    <noise>
+                        <type>gaussian</type>
+                        <mean>0.00</mean>
+                        <stddev>0.007</stddev>
+                    </noise>
+                </camera>
 
-                        <plugin name="camera_controller" filename="libgazebo_ros_camera.so"><!--filename="libgazebo_ros_openni_kinect.so">-->
-<!--                            <robotNamespace>${robot_namespace}</robotNamespace>-->
-                            <alwaysOn>true</alwaysOn>
-                            <updateRate>0.0</updateRate>
+                <plugin name="camera_controller" filename="libgazebo_ros_camera.so"><!--filename="libgazebo_ros_openni_kinect.so">-->
+                    <!--                            <robotNamespace>${robot_namespace}</robotNamespace>-->
+                    <alwaysOn>true</alwaysOn>
+                    <updateRate>0.0</updateRate>
 
-                            <cameraName>${robot_namespace}/camera</cameraName>
-                            <imageTopicName>image_raw</imageTopicName>
-                            <cameraInfoTopicName>camera_info</cameraInfoTopicName>
-                            <frameName>camera_link_optical</frameName>
+                    <cameraName>camera_labmetro</cameraName>
+                    <imageTopicName>image_raw</imageTopicName>
+                    <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+                    <frameName>camera_link_optical</frameName>
 
-                            <!-- setting hackBaseline to anything but 0.0 will cause a misalignment
-                     between the gazebo sensor image and the frame it is supposed to
-                     be attached to -->
-                            <hackBaseline>0.0</hackBaseline>
-                            <distortionK1>0.0</distortionK1>
-                            <distortionK2>0.0</distortionK2>
-                            <distortionK3>0.0</distortionK3>
-                            <distortionT1>0.0</distortionT1>
-                            <distortionT2>0.0</distortionT2>
-                            <CxPrime>0</CxPrime>
-                            <Cx>0.0</Cx>
-                            <Cy>0.0</Cy>
-                            <focalLength>0.0</focalLength>
-                        </plugin>
-                    </sensor>
-                </gazebo>
+                    <!-- setting hackBaseline to anything but 0.0 will cause a misalignment
+             between the gazebo sensor image and the frame it is supposed to
+             be attached to -->
+                    <hackBaseline>0.0</hackBaseline>
+                    <distortionK1>0.0</distortionK1>
+                    <distortionK2>0.0</distortionK2>
+                    <distortionK3>0.0</distortionK3>
+                    <distortionT1>0.0</distortionT1>
+                    <distortionT2>0.0</distortionT2>
+                    <CxPrime>0</CxPrime>
+                    <Cx>0.0</Cx>
+                    <Cy>0.0</Cy>
+                    <focalLength>0.0</focalLength>
+                </plugin>
+            </sensor>
+        </gazebo>
 
 
         <transmission name="tran1">
             <type>transmission_interface/SimpleTransmission</type>
-            <joint name="joint_yaw">
+            <joint name="gimbal_joint_yaw">
                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
             </joint>
             <actuator name="motor1">
@@ -243,7 +252,7 @@
 
         <transmission name="tran2">
             <type>transmission_interface/SimpleTransmission</type>
-            <joint name="joint_roll">
+            <joint name="gimbal_joint_roll">
                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
             </joint>
             <actuator name="motor2">
@@ -254,7 +263,7 @@
 
         <transmission name="tran3">
             <type>transmission_interface/SimpleTransmission</type>
-            <joint name="joint_pitch">
+            <joint name="gimbal_joint_pitch">
                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
             </joint>
             <actuator name="motor3">
