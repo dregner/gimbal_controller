@@ -303,9 +303,9 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "Gimbal_Control");
     Inverse_Kinematic ik;
 
-    while (ros::Time::now().sec < 50) {
-        cout << "\r" << "Waiting, time: " << ros::Time::now().sec << " seg" << std::flush;// << "\033[2J\033[1;1H";
-    }
+//    while (ros::Time::now().sec < 50) {
+//        cout << "\r" << "Waiting, time: " << ros::Time::now().sec << " seg" << std::flush;// << "\033[2J\033[1;1H";
+//    }
     while (ros::ok()) {
         ros::spinOnce();
     }
